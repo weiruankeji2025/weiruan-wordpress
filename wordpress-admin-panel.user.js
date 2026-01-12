@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WordPress 后台管理助手
 // @namespace    https://weiruan.com/
-// @version      1.0.0
+// @version      1.1.0
 // @description  WordPress后台快捷管理工具：发布文章、查看访客数据、网站设置等
 // @author       Weiruan
 // @match        *://*/*
@@ -38,7 +38,6 @@
 
     // ==================== 样式注入 ====================
     const styles = `
-        /* 主题变量 */
         :root {
             --wp-panel-primary: #0073aa;
             --wp-panel-primary-hover: #005a87;
@@ -53,8 +52,6 @@
             --wp-panel-shadow: 0 4px 20px rgba(0,0,0,0.15);
             --wp-panel-radius: 8px;
         }
-
-        /* 暗色主题 */
         .wp-admin-panel.dark-theme {
             --wp-panel-primary: #3582c4;
             --wp-panel-bg: #1e1e1e;
@@ -63,8 +60,6 @@
             --wp-panel-text-secondary: #a0a0a0;
             --wp-panel-border: #3c3c3c;
         }
-
-        /* 触发按钮 */
         .wp-admin-trigger {
             position: fixed;
             right: 20px;
@@ -82,19 +77,15 @@
             transition: all 0.3s ease;
             border: none;
         }
-
         .wp-admin-trigger:hover {
             transform: scale(1.1);
             box-shadow: 0 6px 20px rgba(0,115,170,0.5);
         }
-
         .wp-admin-trigger svg {
             width: 28px;
             height: 28px;
             fill: white;
         }
-
-        /* 主面板 */
         .wp-admin-panel {
             position: fixed;
             right: 20px;
@@ -108,28 +99,18 @@
             display: none;
             flex-direction: column;
             overflow: hidden;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             font-size: 14px;
             color: var(--wp-panel-text);
         }
-
         .wp-admin-panel.active {
             display: flex;
             animation: wpPanelSlideIn 0.3s ease;
         }
-
         @keyframes wpPanelSlideIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-
-        /* 面板头部 */
         .wp-panel-header {
             padding: 16px 20px;
             background: linear-gradient(135deg, #0073aa 0%, #005a87 100%);
@@ -138,7 +119,6 @@
             align-items: center;
             justify-content: space-between;
         }
-
         .wp-panel-header h3 {
             margin: 0;
             font-size: 16px;
@@ -147,12 +127,10 @@
             align-items: center;
             gap: 8px;
         }
-
         .wp-panel-header-actions {
             display: flex;
             gap: 8px;
         }
-
         .wp-panel-header-btn {
             background: rgba(255,255,255,0.2);
             border: none;
@@ -166,19 +144,15 @@
             justify-content: center;
             transition: background 0.2s;
         }
-
         .wp-panel-header-btn:hover {
             background: rgba(255,255,255,0.3);
         }
-
-        /* 标签页 */
         .wp-panel-tabs {
             display: flex;
             background: var(--wp-panel-bg-secondary);
             border-bottom: 1px solid var(--wp-panel-border);
             overflow-x: auto;
         }
-
         .wp-panel-tab {
             flex: 1;
             padding: 12px 8px;
@@ -195,50 +169,39 @@
             gap: 4px;
             min-width: 70px;
         }
-
         .wp-panel-tab:hover {
             background: var(--wp-panel-bg);
             color: var(--wp-panel-primary);
         }
-
         .wp-panel-tab.active {
             background: var(--wp-panel-bg);
             color: var(--wp-panel-primary);
             border-bottom: 2px solid var(--wp-panel-primary);
         }
-
         .wp-panel-tab svg {
             width: 20px;
             height: 20px;
         }
-
-        /* 内容区域 */
         .wp-panel-content {
             flex: 1;
             overflow-y: auto;
             padding: 16px;
         }
-
         .wp-panel-section {
             display: none;
         }
-
         .wp-panel-section.active {
             display: block;
         }
-
-        /* 表单样式 */
         .wp-form-group {
             margin-bottom: 16px;
         }
-
         .wp-form-label {
             display: block;
             margin-bottom: 6px;
             font-weight: 500;
             color: var(--wp-panel-text);
         }
-
         .wp-form-input,
         .wp-form-select,
         .wp-form-textarea {
@@ -252,7 +215,6 @@
             transition: border-color 0.2s, box-shadow 0.2s;
             box-sizing: border-box;
         }
-
         .wp-form-input:focus,
         .wp-form-select:focus,
         .wp-form-textarea:focus {
@@ -260,13 +222,10 @@
             border-color: var(--wp-panel-primary);
             box-shadow: 0 0 0 3px rgba(0,115,170,0.1);
         }
-
         .wp-form-textarea {
             min-height: 120px;
             resize: vertical;
         }
-
-        /* 富文本编辑器 */
         .wp-editor-toolbar {
             display: flex;
             flex-wrap: wrap;
@@ -277,7 +236,6 @@
             border-bottom: none;
             border-radius: 6px 6px 0 0;
         }
-
         .wp-editor-btn {
             width: 32px;
             height: 32px;
@@ -291,12 +249,10 @@
             transition: all 0.2s;
             color: var(--wp-panel-text);
         }
-
         .wp-editor-btn:hover {
             background: var(--wp-panel-primary);
             color: white;
         }
-
         .wp-editor-content {
             min-height: 200px;
             max-height: 300px;
@@ -307,12 +263,13 @@
             background: var(--wp-panel-bg);
             outline: none;
         }
-
         .wp-editor-content:focus {
             border-color: var(--wp-panel-primary);
         }
-
-        /* 按钮 */
+        .wp-editor-content:empty:before {
+            content: attr(data-placeholder);
+            color: var(--wp-panel-text-secondary);
+        }
         .wp-btn {
             padding: 10px 20px;
             border: none;
@@ -326,79 +283,62 @@
             justify-content: center;
             gap: 8px;
         }
-
         .wp-btn-primary {
             background: var(--wp-panel-primary);
             color: white;
         }
-
         .wp-btn-primary:hover {
             background: var(--wp-panel-primary-hover);
         }
-
+        .wp-btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
         .wp-btn-secondary {
             background: var(--wp-panel-bg-secondary);
             color: var(--wp-panel-text);
             border: 1px solid var(--wp-panel-border);
         }
-
         .wp-btn-secondary:hover {
             background: var(--wp-panel-border);
         }
-
         .wp-btn-success {
             background: var(--wp-panel-success);
             color: white;
         }
-
         .wp-btn-danger {
             background: var(--wp-panel-danger);
             color: white;
         }
-
         .wp-btn-block {
             width: 100%;
         }
-
         .wp-btn-group {
             display: flex;
             gap: 8px;
         }
-
-        /* 统计卡片 */
         .wp-stats-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 12px;
             margin-bottom: 20px;
         }
-
         .wp-stat-card {
             padding: 16px;
             background: var(--wp-panel-bg-secondary);
             border-radius: 8px;
             text-align: center;
         }
-
         .wp-stat-value {
             font-size: 28px;
             font-weight: 700;
             color: var(--wp-panel-primary);
             margin-bottom: 4px;
         }
-
         .wp-stat-label {
             font-size: 12px;
             color: var(--wp-panel-text-secondary);
         }
-
-        /* 列表样式 */
-        .wp-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
         .wp-list-item {
             padding: 12px;
             border-bottom: 1px solid var(--wp-panel-border);
@@ -407,26 +347,20 @@
             justify-content: space-between;
             transition: background 0.2s;
         }
-
         .wp-list-item:last-child {
             border-bottom: none;
         }
-
         .wp-list-item:hover {
             background: var(--wp-panel-bg-secondary);
         }
-
         .wp-list-item-title {
             font-weight: 500;
             margin-bottom: 4px;
         }
-
         .wp-list-item-meta {
             font-size: 12px;
             color: var(--wp-panel-text-secondary);
         }
-
-        /* 设置项 */
         .wp-settings-item {
             display: flex;
             align-items: center;
@@ -434,11 +368,9 @@
             padding: 12px 0;
             border-bottom: 1px solid var(--wp-panel-border);
         }
-
         .wp-settings-item:last-child {
             border-bottom: none;
         }
-
         .wp-toggle {
             position: relative;
             width: 44px;
@@ -448,11 +380,9 @@
             cursor: pointer;
             transition: background 0.3s;
         }
-
         .wp-toggle.active {
             background: var(--wp-panel-success);
         }
-
         .wp-toggle::after {
             content: '';
             position: absolute;
@@ -464,18 +394,14 @@
             border-radius: 50%;
             transition: transform 0.3s;
         }
-
         .wp-toggle.active::after {
             transform: translateX(20px);
         }
-
-        /* 快捷操作 */
         .wp-quick-actions {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 12px;
         }
-
         .wp-quick-action {
             padding: 16px 12px;
             background: var(--wp-panel-bg-secondary);
@@ -487,26 +413,21 @@
             text-decoration: none;
             color: var(--wp-panel-text);
         }
-
         .wp-quick-action:hover {
             border-color: var(--wp-panel-primary);
             background: var(--wp-panel-bg);
             transform: translateY(-2px);
         }
-
         .wp-quick-action svg {
             width: 24px;
             height: 24px;
             margin-bottom: 8px;
             color: var(--wp-panel-primary);
         }
-
         .wp-quick-action-label {
             font-size: 12px;
             font-weight: 500;
         }
-
-        /* 消息提示 */
         .wp-toast {
             position: fixed;
             top: 20px;
@@ -520,32 +441,15 @@
             align-items: center;
             gap: 10px;
             animation: wpToastIn 0.3s ease;
+            color: #333;
         }
-
-        .wp-toast.success {
-            border-left: 4px solid var(--wp-panel-success);
-        }
-
-        .wp-toast.error {
-            border-left: 4px solid var(--wp-panel-danger);
-        }
-
-        .wp-toast.warning {
-            border-left: 4px solid var(--wp-panel-warning);
-        }
-
+        .wp-toast.success { border-left: 4px solid var(--wp-panel-success); }
+        .wp-toast.error { border-left: 4px solid var(--wp-panel-danger); }
+        .wp-toast.warning { border-left: 4px solid var(--wp-panel-warning); }
         @keyframes wpToastIn {
-            from {
-                opacity: 0;
-                transform: translateX(100px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
+            from { opacity: 0; transform: translateX(100px); }
+            to { opacity: 1; transform: translateX(0); }
         }
-
-        /* 加载动画 */
         .wp-loading {
             display: inline-block;
             width: 20px;
@@ -555,28 +459,20 @@
             border-radius: 50%;
             animation: wpSpin 0.8s linear infinite;
         }
-
         @keyframes wpSpin {
-            to {
-                transform: rotate(360deg);
-            }
+            to { transform: rotate(360deg); }
         }
-
-        /* 空状态 */
         .wp-empty {
             text-align: center;
             padding: 40px 20px;
             color: var(--wp-panel-text-secondary);
         }
-
         .wp-empty svg {
             width: 48px;
             height: 48px;
             margin-bottom: 12px;
             opacity: 0.5;
         }
-
-        /* 配置面板 */
         .wp-config-overlay {
             position: fixed;
             inset: 0;
@@ -586,7 +482,6 @@
             align-items: center;
             justify-content: center;
         }
-
         .wp-config-modal {
             width: 90%;
             max-width: 500px;
@@ -595,14 +490,12 @@
             padding: 24px;
             max-height: 80vh;
             overflow-y: auto;
+            color: #333;
         }
-
         .wp-config-modal h3 {
             margin: 0 0 20px;
             color: var(--wp-panel-text);
         }
-
-        /* 文章列表管理 */
         .wp-post-item {
             padding: 12px;
             border: 1px solid var(--wp-panel-border);
@@ -610,42 +503,29 @@
             margin-bottom: 8px;
             background: var(--wp-panel-bg);
         }
-
         .wp-post-item-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
             margin-bottom: 8px;
         }
-
         .wp-post-item-title {
             font-weight: 600;
             color: var(--wp-panel-text);
             flex: 1;
         }
-
         .wp-post-item-status {
             font-size: 11px;
             padding: 2px 8px;
             border-radius: 10px;
             background: var(--wp-panel-bg-secondary);
         }
-
-        .wp-post-item-status.publish {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .wp-post-item-status.draft {
-            background: #fff3cd;
-            color: #856404;
-        }
-
+        .wp-post-item-status.publish { background: #d4edda; color: #155724; }
+        .wp-post-item-status.draft { background: #fff3cd; color: #856404; }
         .wp-post-item-actions {
             display: flex;
             gap: 6px;
         }
-
         .wp-post-item-btn {
             padding: 4px 8px;
             font-size: 12px;
@@ -654,32 +534,29 @@
             cursor: pointer;
             transition: all 0.2s;
         }
-
-        /* 图表容器 */
         .wp-chart-container {
             padding: 16px;
             background: var(--wp-panel-bg-secondary);
             border-radius: 8px;
             margin-bottom: 16px;
         }
-
         .wp-chart-title {
             font-weight: 600;
             margin-bottom: 12px;
         }
-
         .wp-chart-bar {
             display: flex;
             align-items: center;
             margin-bottom: 8px;
         }
-
         .wp-chart-bar-label {
-            width: 60px;
+            width: 80px;
             font-size: 12px;
             color: var(--wp-panel-text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
-
         .wp-chart-bar-track {
             flex: 1;
             height: 20px;
@@ -687,23 +564,48 @@
             border-radius: 4px;
             overflow: hidden;
         }
-
         .wp-chart-bar-fill {
             height: 100%;
             background: linear-gradient(90deg, var(--wp-panel-primary), #00a0d2);
             border-radius: 4px;
             transition: width 0.5s ease;
         }
-
         .wp-chart-bar-value {
             width: 50px;
             text-align: right;
             font-size: 12px;
             font-weight: 600;
         }
+        .wp-info-box {
+            padding: 12px;
+            background: #e7f3ff;
+            border: 1px solid #b3d7ff;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            font-size: 12px;
+            color: #0056b3;
+        }
+        .wp-auth-form {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--wp-panel-border);
+        }
+        .wp-connection-status {
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            margin-bottom: 12px;
+        }
+        .wp-connection-status.connected {
+            background: #d4edda;
+            color: #155724;
+        }
+        .wp-connection-status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
     `;
 
-    // 注入样式
     if (typeof GM_addStyle !== 'undefined') {
         GM_addStyle(styles);
     } else {
@@ -714,7 +616,7 @@
 
     // ==================== 图标库 ====================
     const Icons = {
-        wordpress: `<svg viewBox="0 0 24 24"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 19.5c-5.247 0-9.5-4.253-9.5-9.5S6.753 2.5 12 2.5s9.5 4.253 9.5 9.5-4.253 9.5-9.5 9.5zm-4.5-9.5c0 1.795.896 3.424 2.266 4.449L5.31 7.878A7.454 7.454 0 007.5 12zm9.19-3.51c.36-.913.64-1.575.64-2.39a2.5 2.5 0 00-2.5-2.5c-.77 0-1.47.35-1.93.9l.93 2.6 2.87-.61zM12 4.5c1.07 0 2.07.22 2.98.62L12 13.5 8.83 5.23A7.47 7.47 0 0112 4.5zm6.69 3.38a7.454 7.454 0 01-1.19 8.08l-3.24-8.85 3.18-.68c.5.4.92.88 1.25 1.45z"/></svg>`,
+        wordpress: `<svg viewBox="0 0 24 24"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 19c-4.963 0-9-4.037-9-9s4.037-9 9-9 9 4.037 9 9-4.037 9-9 9z"/><path d="M12 6c-3.309 0-6 2.691-6 6s2.691 6 6 6 6-2.691 6-6-2.691-6-6-6zm0 10c-2.206 0-4-1.794-4-4s1.794-4 4-4 4 1.794 4 4-1.794 4-4 4z"/></svg>`,
         edit: `<svg viewBox="0 0 24 24"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>`,
         chart: `<svg viewBox="0 0 24 24"><path fill="currentColor" d="M3 13h2v8H3v-8zm4-6h2v14H7V7zm4 3h2v11h-2V10zm4-6h2v17h-2V4zm4 9h2v8h-2v-8z"/></svg>`,
         settings: `<svg viewBox="0 0 24 24"><path fill="currentColor" d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>`,
@@ -738,55 +640,73 @@
         refresh: `<svg viewBox="0 0 24 24"><path fill="currentColor" d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>`,
         view: `<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>`,
         delete: `<svg viewBox="0 0 24 24"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>`,
+        check: `<svg viewBox="0 0 24 24"><path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`,
     };
 
-    // ==================== API 封装 ====================
+    // ==================== API 封装 (使用 GM_xmlhttpRequest) ====================
     class WordPressAPI {
-        constructor(siteUrl) {
+        constructor(siteUrl, username = '', appPassword = '') {
             this.siteUrl = siteUrl.replace(/\/$/, '');
             this.apiBase = `${this.siteUrl}/wp-json/wp/v2`;
-            this.nonce = this.getNonce();
+            this.username = username;
+            this.appPassword = appPassword;
         }
 
-        getNonce() {
-            // 尝试从页面获取nonce
-            const nonceInput = document.querySelector('#_wpnonce, input[name="_wpnonce"]');
-            if (nonceInput) return nonceInput.value;
+        // 使用 GM_xmlhttpRequest 进行跨域请求
+        request(endpoint, options = {}) {
+            return new Promise((resolve, reject) => {
+                const url = endpoint.startsWith('http') ? endpoint : `${this.apiBase}${endpoint}`;
+                const method = options.method || 'GET';
+                const headers = {
+                    'Content-Type': 'application/json',
+                    ...options.headers
+                };
 
-            // 尝试从wpApiSettings获取
-            if (typeof wpApiSettings !== 'undefined') {
-                return wpApiSettings.nonce;
-            }
-
-            return null;
-        }
-
-        async request(endpoint, options = {}) {
-            const url = endpoint.startsWith('http') ? endpoint : `${this.apiBase}${endpoint}`;
-            const headers = {
-                'Content-Type': 'application/json',
-                ...options.headers
-            };
-
-            if (this.nonce) {
-                headers['X-WP-Nonce'] = this.nonce;
-            }
-
-            try {
-                const response = await fetch(url, {
-                    credentials: 'include',
-                    ...options,
-                    headers
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                // 添加认证头
+                if (this.username && this.appPassword) {
+                    const auth = btoa(`${this.username}:${this.appPassword}`);
+                    headers['Authorization'] = `Basic ${auth}`;
                 }
 
-                return await response.json();
+                GM_xmlhttpRequest({
+                    method: method,
+                    url: url,
+                    headers: headers,
+                    data: options.body || null,
+                    onload: (response) => {
+                        try {
+                            if (response.status >= 200 && response.status < 300) {
+                                const data = JSON.parse(response.responseText);
+                                resolve(data);
+                            } else {
+                                let errorMsg = `HTTP ${response.status}`;
+                                try {
+                                    const errData = JSON.parse(response.responseText);
+                                    errorMsg = errData.message || errorMsg;
+                                } catch(e) {}
+                                reject(new Error(errorMsg));
+                            }
+                        } catch (e) {
+                            reject(new Error('解析响应失败: ' + e.message));
+                        }
+                    },
+                    onerror: (error) => {
+                        reject(new Error('网络请求失败，请检查站点地址是否正确'));
+                    },
+                    ontimeout: () => {
+                        reject(new Error('请求超时'));
+                    }
+                });
+            });
+        }
+
+        // 测试连接
+        async testConnection() {
+            try {
+                await this.request(`${this.siteUrl}/wp-json`);
+                return { success: true };
             } catch (error) {
-                console.error('WordPress API Error:', error);
-                throw error;
+                return { success: false, error: error.message };
             }
         }
 
@@ -794,10 +714,6 @@
         async getPosts(params = {}) {
             const query = new URLSearchParams({ per_page: 10, ...params }).toString();
             return this.request(`/posts?${query}`);
-        }
-
-        async getPost(id) {
-            return this.request(`/posts/${id}`);
         }
 
         async createPost(data) {
@@ -809,13 +725,13 @@
 
         async updatePost(id, data) {
             return this.request(`/posts/${id}`, {
-                method: 'PUT',
+                method: 'POST',
                 body: JSON.stringify(data)
             });
         }
 
         async deletePost(id) {
-            return this.request(`/posts/${id}`, {
+            return this.request(`/posts/${id}?force=true`, {
                 method: 'DELETE'
             });
         }
@@ -829,56 +745,70 @@
             return this.request('/tags?per_page=100');
         }
 
-        // 用户
-        async getCurrentUser() {
-            return this.request('/users/me');
-        }
-
         // 评论
         async getComments(params = {}) {
             const query = new URLSearchParams({ per_page: 10, ...params }).toString();
             return this.request(`/comments?${query}`);
         }
 
-        // 媒体
-        async uploadMedia(file) {
-            const formData = new FormData();
-            formData.append('file', file);
-
-            const headers = {};
-            if (this.nonce) {
-                headers['X-WP-Nonce'] = this.nonce;
-            }
-
-            const response = await fetch(`${this.apiBase}/media`, {
-                method: 'POST',
-                credentials: 'include',
-                headers,
-                body: formData
-            });
-
-            return response.json();
+        // 用户信息
+        async getCurrentUser() {
+            return this.request('/users/me');
         }
 
         // 站点信息
         async getSiteInfo() {
-            return this.request('/');
+            return this.request(`${this.siteUrl}/wp-json`);
         }
 
-        // 统计数据（需要对应插件支持，这里模拟）
+        // 获取统计数据 - 基于文章数据
         async getStats() {
-            // 实际项目中可以对接 Jetpack Stats 或其他统计插件
-            return {
-                today: Math.floor(Math.random() * 1000),
-                week: Math.floor(Math.random() * 5000),
-                month: Math.floor(Math.random() * 20000),
-                total: Math.floor(Math.random() * 100000),
-                popular: [
-                    { title: '示例文章1', views: 1234 },
-                    { title: '示例文章2', views: 987 },
-                    { title: '示例文章3', views: 756 },
-                ]
-            };
+            try {
+                // 获取所有已发布文章
+                const allPosts = await this.request('/posts?per_page=100&status=publish');
+                const totalPosts = allPosts.length;
+
+                // 计算时间范围内的文章
+                const now = new Date();
+                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+                const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+                let todayPosts = 0, weekPosts = 0, monthPosts = 0;
+                const postStats = [];
+
+                allPosts.forEach(post => {
+                    const postDate = new Date(post.date);
+                    if (postDate >= today) todayPosts++;
+                    if (postDate >= weekAgo) weekPosts++;
+                    if (postDate >= monthAgo) monthPosts++;
+
+                    postStats.push({
+                        id: post.id,
+                        title: post.title.rendered.replace(/<[^>]*>/g, ''),
+                        date: post.date,
+                        link: post.link
+                    });
+                });
+
+                // 获取评论数
+                const comments = await this.request('/comments?per_page=100');
+                const totalComments = comments.length;
+
+                return {
+                    posts: {
+                        total: totalPosts,
+                        today: todayPosts,
+                        week: weekPosts,
+                        month: monthPosts
+                    },
+                    comments: totalComments,
+                    recentPosts: postStats.slice(0, 5)
+                };
+            } catch (error) {
+                console.error('获取统计失败:', error);
+                throw error;
+            }
         }
     }
 
@@ -887,9 +817,11 @@
         constructor() {
             this.api = null;
             this.siteUrl = Config.get('siteUrl', '');
+            this.username = Config.get('username', '');
+            this.appPassword = Config.get('appPassword', '');
             this.darkMode = Config.get('darkMode', false);
+            this.connected = false;
             this.categories = [];
-            this.tags = [];
             this.init();
         }
 
@@ -898,22 +830,43 @@
             this.bindEvents();
             this.registerMenuCommand();
 
-            if (this.siteUrl) {
-                this.api = new WordPressAPI(this.siteUrl);
+            if (this.siteUrl && this.username && this.appPassword) {
+                this.api = new WordPressAPI(this.siteUrl, this.username, this.appPassword);
+                this.testAndLoad();
+            }
+        }
+
+        async testAndLoad() {
+            const result = await this.api.testConnection();
+            this.connected = result.success;
+            this.updateConnectionStatus();
+            if (this.connected) {
                 this.loadInitialData();
+            }
+        }
+
+        updateConnectionStatus() {
+            const statusEl = this.panel.querySelector('#wp-connection-status');
+            if (statusEl) {
+                if (this.connected) {
+                    statusEl.className = 'wp-connection-status connected';
+                    statusEl.textContent = '✓ 已连接到 ' + this.siteUrl;
+                } else {
+                    statusEl.className = 'wp-connection-status disconnected';
+                    statusEl.textContent = '✗ 未连接 - 请配置站点';
+                }
             }
         }
 
         registerMenuCommand() {
             if (typeof GM_registerMenuCommand !== 'undefined') {
-                GM_registerMenuCommand('⚙️ 配置WordPress站点', () => this.showConfigModal());
-                GM_registerMenuCommand('📝 发布新文章', () => this.openPanel('publish'));
-                GM_registerMenuCommand('📊 查看统计', () => this.openPanel('stats'));
+                GM_registerMenuCommand('配置WordPress站点', () => this.showConfigModal());
+                GM_registerMenuCommand('发布新文章', () => this.openPanel('publish'));
+                GM_registerMenuCommand('查看统计', () => this.openPanel('stats'));
             }
         }
 
         createUI() {
-            // 创建触发按钮
             const trigger = document.createElement('button');
             trigger.className = 'wp-admin-trigger';
             trigger.innerHTML = Icons.wordpress;
@@ -921,7 +874,6 @@
             document.body.appendChild(trigger);
             this.trigger = trigger;
 
-            // 创建主面板
             const panel = document.createElement('div');
             panel.className = `wp-admin-panel ${this.darkMode ? 'dark-theme' : ''}`;
             panel.innerHTML = this.getPanelHTML();
@@ -934,57 +886,26 @@
                 <div class="wp-panel-header">
                     <h3>${Icons.wordpress} WP管理助手</h3>
                     <div class="wp-panel-header-actions">
-                        <button class="wp-panel-header-btn" id="wp-toggle-theme" title="切换主题">
-                            ${Icons.moon}
-                        </button>
-                        <button class="wp-panel-header-btn" id="wp-config-btn" title="配置">
-                            ${Icons.config}
-                        </button>
-                        <button class="wp-panel-header-btn" id="wp-close-btn" title="关闭">
-                            ${Icons.close}
-                        </button>
+                        <button class="wp-panel-header-btn" id="wp-toggle-theme" title="切换主题">${Icons.moon}</button>
+                        <button class="wp-panel-header-btn" id="wp-config-btn" title="配置">${Icons.config}</button>
+                        <button class="wp-panel-header-btn" id="wp-close-btn" title="关闭">${Icons.close}</button>
                     </div>
                 </div>
 
+                <div id="wp-connection-status" class="wp-connection-status disconnected">✗ 未连接 - 请配置站点</div>
+
                 <div class="wp-panel-tabs">
-                    <button class="wp-panel-tab active" data-tab="publish">
-                        ${Icons.edit}
-                        <span>发布</span>
-                    </button>
-                    <button class="wp-panel-tab" data-tab="stats">
-                        ${Icons.chart}
-                        <span>统计</span>
-                    </button>
-                    <button class="wp-panel-tab" data-tab="settings">
-                        ${Icons.settings}
-                        <span>设置</span>
-                    </button>
-                    <button class="wp-panel-tab" data-tab="more">
-                        ${Icons.more}
-                        <span>更多</span>
-                    </button>
+                    <button class="wp-panel-tab active" data-tab="publish">${Icons.edit}<span>发布</span></button>
+                    <button class="wp-panel-tab" data-tab="stats">${Icons.chart}<span>统计</span></button>
+                    <button class="wp-panel-tab" data-tab="settings">${Icons.settings}<span>设置</span></button>
+                    <button class="wp-panel-tab" data-tab="more">${Icons.more}<span>更多</span></button>
                 </div>
 
                 <div class="wp-panel-content">
-                    <!-- 发布文章 -->
-                    <div class="wp-panel-section active" id="section-publish">
-                        ${this.getPublishHTML()}
-                    </div>
-
-                    <!-- 统计数据 -->
-                    <div class="wp-panel-section" id="section-stats">
-                        ${this.getStatsHTML()}
-                    </div>
-
-                    <!-- 网站设置 -->
-                    <div class="wp-panel-section" id="section-settings">
-                        ${this.getSettingsHTML()}
-                    </div>
-
-                    <!-- 更多功能 -->
-                    <div class="wp-panel-section" id="section-more">
-                        ${this.getMoreHTML()}
-                    </div>
+                    <div class="wp-panel-section active" id="section-publish">${this.getPublishHTML()}</div>
+                    <div class="wp-panel-section" id="section-stats">${this.getStatsHTML()}</div>
+                    <div class="wp-panel-section" id="section-settings">${this.getSettingsHTML()}</div>
+                    <div class="wp-panel-section" id="section-more">${this.getMoreHTML()}</div>
                 </div>
             `;
         }
@@ -995,7 +916,6 @@
                     <label class="wp-form-label">文章标题</label>
                     <input type="text" class="wp-form-input" id="wp-post-title" placeholder="输入文章标题...">
                 </div>
-
                 <div class="wp-form-group">
                     <label class="wp-form-label">文章内容</label>
                     <div class="wp-editor-toolbar">
@@ -1008,21 +928,16 @@
                         <button class="wp-editor-btn" data-cmd="createLink" title="链接">${Icons.link}</button>
                         <button class="wp-editor-btn" id="wp-insert-image" title="图片">${Icons.image}</button>
                     </div>
-                    <div class="wp-editor-content" id="wp-post-content" contenteditable="true" placeholder="开始写作..."></div>
+                    <div class="wp-editor-content" id="wp-post-content" contenteditable="true" data-placeholder="开始写作..."></div>
                 </div>
-
                 <div class="wp-form-group">
                     <label class="wp-form-label">分类目录</label>
-                    <select class="wp-form-select" id="wp-post-category">
-                        <option value="">选择分类...</option>
-                    </select>
+                    <select class="wp-form-select" id="wp-post-category"><option value="">选择分类...</option></select>
                 </div>
-
                 <div class="wp-form-group">
                     <label class="wp-form-label">标签</label>
                     <input type="text" class="wp-form-input" id="wp-post-tags" placeholder="用逗号分隔多个标签">
                 </div>
-
                 <div class="wp-form-group">
                     <label class="wp-form-label">文章状态</label>
                     <select class="wp-form-select" id="wp-post-status">
@@ -1031,63 +946,44 @@
                         <option value="pending">待审核</option>
                     </select>
                 </div>
-
                 <div class="wp-btn-group">
-                    <button class="wp-btn wp-btn-primary wp-btn-block" id="wp-publish-btn">
-                        发布文章
-                    </button>
+                    <button class="wp-btn wp-btn-primary wp-btn-block" id="wp-publish-btn">发布文章</button>
                 </div>
-
                 <div style="margin-top: 20px;">
                     <h4 style="margin-bottom: 12px; font-size: 14px;">最近文章</h4>
-                    <div id="wp-recent-posts">
-                        <div class="wp-empty">
-                            ${Icons.posts}
-                            <p>暂无文章</p>
-                        </div>
-                    </div>
+                    <div id="wp-recent-posts"><div class="wp-empty">${Icons.posts}<p>请先配置站点</p></div></div>
                 </div>
             `;
         }
 
         getStatsHTML() {
             return `
+                <div class="wp-info-box">
+                    统计数据基于WordPress文章和评论API获取，显示的是内容发布统计。
+                </div>
                 <div class="wp-stats-grid" id="wp-stats-overview">
                     <div class="wp-stat-card">
-                        <div class="wp-stat-value" id="stat-today">--</div>
-                        <div class="wp-stat-label">今日访问</div>
+                        <div class="wp-stat-value" id="stat-total-posts">--</div>
+                        <div class="wp-stat-label">总文章数</div>
                     </div>
                     <div class="wp-stat-card">
-                        <div class="wp-stat-value" id="stat-week">--</div>
-                        <div class="wp-stat-label">本周访问</div>
+                        <div class="wp-stat-value" id="stat-month-posts">--</div>
+                        <div class="wp-stat-label">本月发布</div>
                     </div>
                     <div class="wp-stat-card">
-                        <div class="wp-stat-value" id="stat-month">--</div>
-                        <div class="wp-stat-label">本月访问</div>
+                        <div class="wp-stat-value" id="stat-week-posts">--</div>
+                        <div class="wp-stat-label">本周发布</div>
                     </div>
                     <div class="wp-stat-card">
-                        <div class="wp-stat-value" id="stat-total">--</div>
-                        <div class="wp-stat-label">总访问量</div>
+                        <div class="wp-stat-value" id="stat-comments">--</div>
+                        <div class="wp-stat-label">总评论数</div>
                     </div>
                 </div>
-
                 <div class="wp-chart-container">
-                    <div class="wp-chart-title">📈 本周访问趋势</div>
-                    <div id="wp-weekly-chart">
-                        <!-- 动态生成图表 -->
-                    </div>
+                    <div class="wp-chart-title">最近文章</div>
+                    <div id="wp-recent-posts-stats"><div class="wp-empty">暂无数据</div></div>
                 </div>
-
-                <div class="wp-chart-container">
-                    <div class="wp-chart-title">🔥 热门文章</div>
-                    <div id="wp-popular-posts">
-                        <div class="wp-empty">暂无数据</div>
-                    </div>
-                </div>
-
-                <button class="wp-btn wp-btn-secondary wp-btn-block" id="wp-refresh-stats">
-                    ${Icons.refresh} 刷新数据
-                </button>
+                <button class="wp-btn wp-btn-secondary wp-btn-block" id="wp-refresh-stats">${Icons.refresh} 刷新数据</button>
             `;
         }
 
@@ -1095,20 +991,11 @@
             return `
                 <div class="wp-settings-item">
                     <div>
-                        <div class="wp-list-item-title">站点标题</div>
-                        <div class="wp-list-item-meta" id="wp-site-title">--</div>
+                        <div class="wp-list-item-title">站点地址</div>
+                        <div class="wp-list-item-meta" id="wp-site-url-display">${this.siteUrl || '未配置'}</div>
                     </div>
-                    <button class="wp-btn wp-btn-secondary" id="wp-edit-title">编辑</button>
+                    <button class="wp-btn wp-btn-secondary" id="wp-edit-config">配置</button>
                 </div>
-
-                <div class="wp-settings-item">
-                    <div>
-                        <div class="wp-list-item-title">站点描述</div>
-                        <div class="wp-list-item-meta" id="wp-site-desc">--</div>
-                    </div>
-                    <button class="wp-btn wp-btn-secondary" id="wp-edit-desc">编辑</button>
-                </div>
-
                 <div class="wp-settings-item">
                     <div>
                         <div class="wp-list-item-title">深色模式</div>
@@ -1116,33 +1003,14 @@
                     </div>
                     <div class="wp-toggle ${this.darkMode ? 'active' : ''}" id="wp-dark-toggle"></div>
                 </div>
-
                 <h4 style="margin: 20px 0 12px; font-size: 14px;">快捷链接</h4>
                 <div class="wp-quick-actions" id="wp-quick-links">
-                    <a class="wp-quick-action" href="#" data-link="wp-admin">
-                        ${Icons.settings}
-                        <div class="wp-quick-action-label">仪表盘</div>
-                    </a>
-                    <a class="wp-quick-action" href="#" data-link="wp-admin/edit.php">
-                        ${Icons.posts}
-                        <div class="wp-quick-action-label">所有文章</div>
-                    </a>
-                    <a class="wp-quick-action" href="#" data-link="wp-admin/edit-comments.php">
-                        ${Icons.comments}
-                        <div class="wp-quick-action-label">评论</div>
-                    </a>
-                    <a class="wp-quick-action" href="#" data-link="wp-admin/users.php">
-                        ${Icons.users}
-                        <div class="wp-quick-action-label">用户</div>
-                    </a>
-                    <a class="wp-quick-action" href="#" data-link="wp-admin/themes.php">
-                        ${Icons.theme}
-                        <div class="wp-quick-action-label">主题</div>
-                    </a>
-                    <a class="wp-quick-action" href="#" data-link="wp-admin/plugins.php">
-                        ${Icons.plugin}
-                        <div class="wp-quick-action-label">插件</div>
-                    </a>
+                    <a class="wp-quick-action" href="#" data-link="wp-admin">${Icons.settings}<div class="wp-quick-action-label">仪表盘</div></a>
+                    <a class="wp-quick-action" href="#" data-link="wp-admin/edit.php">${Icons.posts}<div class="wp-quick-action-label">所有文章</div></a>
+                    <a class="wp-quick-action" href="#" data-link="wp-admin/edit-comments.php">${Icons.comments}<div class="wp-quick-action-label">评论</div></a>
+                    <a class="wp-quick-action" href="#" data-link="wp-admin/users.php">${Icons.users}<div class="wp-quick-action-label">用户</div></a>
+                    <a class="wp-quick-action" href="#" data-link="wp-admin/themes.php">${Icons.theme}<div class="wp-quick-action-label">主题</div></a>
+                    <a class="wp-quick-action" href="#" data-link="wp-admin/plugins.php">${Icons.plugin}<div class="wp-quick-action-label">插件</div></a>
                 </div>
             `;
         }
@@ -1150,62 +1018,35 @@
         getMoreHTML() {
             return `
                 <h4 style="margin-bottom: 12px; font-size: 14px;">文章管理</h4>
-                <div id="wp-posts-list">
-                    <div class="wp-empty">
-                        ${Icons.posts}
-                        <p>加载文章列表...</p>
-                    </div>
-                </div>
-
+                <div id="wp-posts-list"><div class="wp-empty">${Icons.posts}<p>请先配置站点</p></div></div>
                 <h4 style="margin: 20px 0 12px; font-size: 14px;">最新评论</h4>
-                <div id="wp-comments-list">
-                    <div class="wp-empty">
-                        ${Icons.comments}
-                        <p>加载评论列表...</p>
-                    </div>
-                </div>
-
+                <div id="wp-comments-list"><div class="wp-empty">${Icons.comments}<p>请先配置站点</p></div></div>
                 <h4 style="margin: 20px 0 12px; font-size: 14px;">快捷操作</h4>
                 <div class="wp-quick-actions">
-                    <button class="wp-quick-action" id="wp-clear-cache">
-                        ${Icons.refresh}
-                        <div class="wp-quick-action-label">清理缓存</div>
-                    </button>
-                    <button class="wp-quick-action" id="wp-view-site">
-                        ${Icons.view}
-                        <div class="wp-quick-action-label">查看网站</div>
-                    </button>
-                    <button class="wp-quick-action" id="wp-backup">
-                        ${Icons.settings}
-                        <div class="wp-quick-action-label">备份设置</div>
-                    </button>
+                    <button class="wp-quick-action" id="wp-view-site">${Icons.view}<div class="wp-quick-action-label">查看网站</div></button>
+                    <button class="wp-quick-action" id="wp-refresh-all">${Icons.refresh}<div class="wp-quick-action-label">刷新数据</div></button>
                 </div>
             `;
         }
 
         bindEvents() {
-            // 触发按钮
             this.trigger.addEventListener('click', () => this.togglePanel());
-
-            // 关闭按钮
             this.panel.querySelector('#wp-close-btn').addEventListener('click', () => this.closePanel());
-
-            // 配置按钮
             this.panel.querySelector('#wp-config-btn').addEventListener('click', () => this.showConfigModal());
-
-            // 主题切换
             this.panel.querySelector('#wp-toggle-theme').addEventListener('click', () => this.toggleTheme());
             this.panel.querySelector('#wp-dark-toggle').addEventListener('click', () => this.toggleTheme());
+            this.panel.querySelector('#wp-edit-config')?.addEventListener('click', () => this.showConfigModal());
 
-            // 标签切换
             this.panel.querySelectorAll('.wp-panel-tab').forEach(tab => {
                 tab.addEventListener('click', (e) => this.switchTab(e.currentTarget.dataset.tab));
             });
 
-            // 富文本编辑器工具栏
             this.panel.querySelectorAll('.wp-editor-btn[data-cmd]').forEach(btn => {
-                btn.addEventListener('click', () => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
                     const cmd = btn.dataset.cmd;
+                    const editor = this.panel.querySelector('#wp-post-content');
+                    editor.focus();
                     if (cmd.includes(':')) {
                         const [command, value] = cmd.split(':');
                         document.execCommand(command, false, value);
@@ -1218,21 +1059,20 @@
                 });
             });
 
-            // 插入图片
-            this.panel.querySelector('#wp-insert-image').addEventListener('click', () => {
+            this.panel.querySelector('#wp-insert-image').addEventListener('click', (e) => {
+                e.preventDefault();
                 const url = prompt('输入图片地址:');
                 if (url) {
+                    const editor = this.panel.querySelector('#wp-post-content');
+                    editor.focus();
                     document.execCommand('insertImage', false, url);
                 }
             });
 
-            // 发布文章
             this.panel.querySelector('#wp-publish-btn').addEventListener('click', () => this.publishPost());
-
-            // 刷新统计
             this.panel.querySelector('#wp-refresh-stats').addEventListener('click', () => this.loadStats());
+            this.panel.querySelector('#wp-refresh-all')?.addEventListener('click', () => this.loadMoreData());
 
-            // 快捷链接
             this.panel.querySelectorAll('[data-link]').forEach(link => {
                 link.addEventListener('click', (e) => {
                     e.preventDefault();
@@ -1245,8 +1085,7 @@
                 });
             });
 
-            // 查看网站
-            this.panel.querySelector('#wp-view-site').addEventListener('click', () => {
+            this.panel.querySelector('#wp-view-site')?.addEventListener('click', () => {
                 if (this.siteUrl) {
                     window.open(this.siteUrl, '_blank');
                 } else {
@@ -1254,24 +1093,16 @@
                 }
             });
 
-            // 点击外部关闭
             document.addEventListener('click', (e) => {
                 if (!this.panel.contains(e.target) && !this.trigger.contains(e.target) && this.panel.classList.contains('active')) {
-                    // 如果点击的是配置模态框内部，不关闭
                     if (e.target.closest('.wp-config-overlay')) return;
                     this.closePanel();
                 }
             });
         }
 
-        togglePanel() {
-            this.panel.classList.toggle('active');
-        }
-
-        closePanel() {
-            this.panel.classList.remove('active');
-        }
-
+        togglePanel() { this.panel.classList.toggle('active'); }
+        closePanel() { this.panel.classList.remove('active'); }
         openPanel(tab = 'publish') {
             this.panel.classList.add('active');
             this.switchTab(tab);
@@ -1280,11 +1111,8 @@
         switchTab(tabId) {
             this.panel.querySelectorAll('.wp-panel-tab').forEach(t => t.classList.remove('active'));
             this.panel.querySelectorAll('.wp-panel-section').forEach(s => s.classList.remove('active'));
-
             this.panel.querySelector(`.wp-panel-tab[data-tab="${tabId}"]`).classList.add('active');
             this.panel.querySelector(`#section-${tabId}`).classList.add('active');
-
-            // 加载对应数据
             if (tabId === 'stats') this.loadStats();
             if (tabId === 'more') this.loadMoreData();
         }
@@ -1302,63 +1130,111 @@
             overlay.innerHTML = `
                 <div class="wp-config-modal">
                     <h3>配置WordPress站点</h3>
+                    <div class="wp-info-box">
+                        需要使用WordPress应用密码进行认证。<br>
+                        在WordPress后台 → 用户 → 个人资料 → 应用程序密码 中创建。
+                    </div>
                     <div class="wp-form-group">
                         <label class="wp-form-label">站点地址</label>
-                        <input type="url" class="wp-form-input" id="wp-site-url"
-                            placeholder="https://your-wordpress-site.com"
-                            value="${this.siteUrl}">
-                        <small style="color: var(--wp-panel-text-secondary); font-size: 12px; margin-top: 4px; display: block;">
-                            输入您的WordPress站点地址（不带尾部斜杠）
-                        </small>
+                        <input type="url" class="wp-form-input" id="wp-cfg-url" placeholder="https://your-site.com" value="${this.siteUrl}">
+                    </div>
+                    <div class="wp-form-group">
+                        <label class="wp-form-label">用户名</label>
+                        <input type="text" class="wp-form-input" id="wp-cfg-user" placeholder="WordPress用户名" value="${this.username}">
+                    </div>
+                    <div class="wp-form-group">
+                        <label class="wp-form-label">应用密码</label>
+                        <input type="password" class="wp-form-input" id="wp-cfg-pass" placeholder="应用程序密码 (带空格)" value="${this.appPassword}">
+                        <small style="color:#666;font-size:12px;margin-top:4px;display:block;">格式如: xxxx xxxx xxxx xxxx xxxx xxxx</small>
                     </div>
                     <div class="wp-btn-group" style="margin-top: 20px;">
-                        <button class="wp-btn wp-btn-secondary" id="wp-config-cancel">取消</button>
-                        <button class="wp-btn wp-btn-primary" id="wp-config-save">保存</button>
+                        <button class="wp-btn wp-btn-secondary" id="wp-cfg-test">测试连接</button>
+                        <button class="wp-btn wp-btn-secondary" id="wp-cfg-cancel">取消</button>
+                        <button class="wp-btn wp-btn-primary" id="wp-cfg-save">保存</button>
                     </div>
+                    <div id="wp-cfg-result" style="margin-top:12px;"></div>
                 </div>
             `;
             document.body.appendChild(overlay);
 
-            overlay.querySelector('#wp-config-cancel').addEventListener('click', () => overlay.remove());
-            overlay.querySelector('#wp-config-save').addEventListener('click', () => {
-                const url = overlay.querySelector('#wp-site-url').value.trim();
-                if (url) {
-                    this.siteUrl = url.replace(/\/$/, '');
-                    Config.set('siteUrl', this.siteUrl);
-                    this.api = new WordPressAPI(this.siteUrl);
-                    this.loadInitialData();
-                    this.showToast('配置已保存', 'success');
+            const testBtn = overlay.querySelector('#wp-cfg-test');
+            const saveBtn = overlay.querySelector('#wp-cfg-save');
+            const cancelBtn = overlay.querySelector('#wp-cfg-cancel');
+            const resultDiv = overlay.querySelector('#wp-cfg-result');
+
+            testBtn.addEventListener('click', async () => {
+                const url = overlay.querySelector('#wp-cfg-url').value.trim();
+                const user = overlay.querySelector('#wp-cfg-user').value.trim();
+                const pass = overlay.querySelector('#wp-cfg-pass').value.trim();
+
+                if (!url) {
+                    resultDiv.innerHTML = '<span style="color:red;">请输入站点地址</span>';
+                    return;
                 }
+
+                resultDiv.innerHTML = '<span class="wp-loading"></span> 测试中...';
+                const testApi = new WordPressAPI(url, user, pass);
+                const result = await testApi.testConnection();
+
+                if (result.success) {
+                    resultDiv.innerHTML = '<span style="color:green;">✓ 连接成功！</span>';
+                } else {
+                    resultDiv.innerHTML = `<span style="color:red;">✗ 连接失败: ${result.error}</span>`;
+                }
+            });
+
+            saveBtn.addEventListener('click', async () => {
+                const url = overlay.querySelector('#wp-cfg-url').value.trim().replace(/\/$/, '');
+                const user = overlay.querySelector('#wp-cfg-user').value.trim();
+                const pass = overlay.querySelector('#wp-cfg-pass').value.trim();
+
+                if (!url || !user || !pass) {
+                    resultDiv.innerHTML = '<span style="color:red;">请填写所有字段</span>';
+                    return;
+                }
+
+                this.siteUrl = url;
+                this.username = user;
+                this.appPassword = pass;
+
+                Config.set('siteUrl', this.siteUrl);
+                Config.set('username', this.username);
+                Config.set('appPassword', this.appPassword);
+
+                this.api = new WordPressAPI(this.siteUrl, this.username, this.appPassword);
+                await this.testAndLoad();
+
+                this.panel.querySelector('#wp-site-url-display').textContent = this.siteUrl;
+                this.showToast('配置已保存', 'success');
                 overlay.remove();
             });
 
+            cancelBtn.addEventListener('click', () => overlay.remove());
             overlay.addEventListener('click', (e) => {
                 if (e.target === overlay) overlay.remove();
             });
         }
 
         async loadInitialData() {
-            if (!this.api) return;
+            if (!this.api || !this.connected) return;
 
             try {
-                // 加载分类
                 this.categories = await this.api.getCategories();
                 const categorySelect = this.panel.querySelector('#wp-post-category');
                 categorySelect.innerHTML = '<option value="">选择分类...</option>' +
                     this.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
 
-                // 加载最近文章
                 const posts = await this.api.getPosts({ per_page: 5 });
                 this.renderRecentPosts(posts);
-
             } catch (error) {
-                console.error('Failed to load initial data:', error);
+                console.error('加载数据失败:', error);
+                this.showToast('加载数据失败: ' + error.message, 'error');
             }
         }
 
         renderRecentPosts(posts) {
             const container = this.panel.querySelector('#wp-recent-posts');
-            if (!posts.length) {
+            if (!posts || !posts.length) {
                 container.innerHTML = `<div class="wp-empty">${Icons.posts}<p>暂无文章</p></div>`;
                 return;
             }
@@ -1366,7 +1242,7 @@
             container.innerHTML = posts.map(post => `
                 <div class="wp-post-item">
                     <div class="wp-post-item-header">
-                        <div class="wp-post-item-title">${post.title.rendered}</div>
+                        <div class="wp-post-item-title">${post.title.rendered || '无标题'}</div>
                         <span class="wp-post-item-status ${post.status}">${post.status === 'publish' ? '已发布' : '草稿'}</span>
                     </div>
                     <div class="wp-post-item-actions">
@@ -1378,8 +1254,8 @@
         }
 
         async publishPost() {
-            if (!this.api) {
-                this.showToast('请先配置站点地址', 'warning');
+            if (!this.api || !this.connected) {
+                this.showToast('请先配置并连接站点', 'warning');
                 return;
             }
 
@@ -1394,7 +1270,7 @@
                 return;
             }
 
-            if (!content || content === '<br>') {
+            if (!content || content === '<br>' || content.trim() === '') {
                 this.showToast('请输入文章内容', 'warning');
                 return;
             }
@@ -1405,22 +1281,22 @@
 
             try {
                 const postData = {
-                    title,
-                    content,
-                    status,
-                    categories: category ? [parseInt(category)] : [],
-                    tags: tags ? tags.split(',').map(t => t.trim()) : []
+                    title: title,
+                    content: content,
+                    status: status
                 };
 
-                const post = await this.api.createPost(postData);
+                if (category) {
+                    postData.categories = [parseInt(category)];
+                }
+
+                await this.api.createPost(postData);
                 this.showToast('文章发布成功！', 'success');
 
-                // 清空表单
                 this.panel.querySelector('#wp-post-title').value = '';
                 this.panel.querySelector('#wp-post-content').innerHTML = '';
                 this.panel.querySelector('#wp-post-tags').value = '';
 
-                // 刷新最近文章
                 const posts = await this.api.getPosts({ per_page: 5 });
                 this.renderRecentPosts(posts);
 
@@ -1433,71 +1309,52 @@
         }
 
         async loadStats() {
-            if (!this.api) {
-                this.showToast('请先配置站点地址', 'warning');
+            if (!this.api || !this.connected) {
+                this.showToast('请先配置并连接站点', 'warning');
                 return;
             }
 
             try {
                 const stats = await this.api.getStats();
 
-                // 更新数字
-                this.panel.querySelector('#stat-today').textContent = this.formatNumber(stats.today);
-                this.panel.querySelector('#stat-week').textContent = this.formatNumber(stats.week);
-                this.panel.querySelector('#stat-month').textContent = this.formatNumber(stats.month);
-                this.panel.querySelector('#stat-total').textContent = this.formatNumber(stats.total);
+                this.panel.querySelector('#stat-total-posts').textContent = stats.posts.total;
+                this.panel.querySelector('#stat-month-posts').textContent = stats.posts.month;
+                this.panel.querySelector('#stat-week-posts').textContent = stats.posts.week;
+                this.panel.querySelector('#stat-comments').textContent = stats.comments;
 
-                // 渲染周访问图表
-                const weekData = [
-                    { day: '周一', value: Math.floor(Math.random() * 500) },
-                    { day: '周二', value: Math.floor(Math.random() * 500) },
-                    { day: '周三', value: Math.floor(Math.random() * 500) },
-                    { day: '周四', value: Math.floor(Math.random() * 500) },
-                    { day: '周五', value: Math.floor(Math.random() * 500) },
-                    { day: '周六', value: Math.floor(Math.random() * 500) },
-                    { day: '周日', value: Math.floor(Math.random() * 500) },
-                ];
-                const maxValue = Math.max(...weekData.map(d => d.value));
-
-                this.panel.querySelector('#wp-weekly-chart').innerHTML = weekData.map(d => `
-                    <div class="wp-chart-bar">
-                        <span class="wp-chart-bar-label">${d.day}</span>
-                        <div class="wp-chart-bar-track">
-                            <div class="wp-chart-bar-fill" style="width: ${(d.value / maxValue * 100)}%"></div>
+                const recentContainer = this.panel.querySelector('#wp-recent-posts-stats');
+                if (stats.recentPosts && stats.recentPosts.length) {
+                    recentContainer.innerHTML = stats.recentPosts.map(p => `
+                        <div class="wp-list-item">
+                            <div style="flex:1;overflow:hidden;">
+                                <div class="wp-list-item-title" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.title}</div>
+                                <div class="wp-list-item-meta">${new Date(p.date).toLocaleDateString()}</div>
+                            </div>
+                            <a href="${p.link}" target="_blank" class="wp-btn wp-btn-secondary" style="padding:4px 8px;font-size:12px;">查看</a>
                         </div>
-                        <span class="wp-chart-bar-value">${d.value}</span>
-                    </div>
-                `).join('');
-
-                // 渲染热门文章
-                this.panel.querySelector('#wp-popular-posts').innerHTML = stats.popular.map((p, i) => `
-                    <div class="wp-list-item">
-                        <div>
-                            <div class="wp-list-item-title">${i + 1}. ${p.title}</div>
-                        </div>
-                        <span style="font-weight: 600; color: var(--wp-panel-primary);">${p.views}</span>
-                    </div>
-                `).join('');
+                    `).join('');
+                } else {
+                    recentContainer.innerHTML = '<div class="wp-empty">暂无文章</div>';
+                }
 
             } catch (error) {
-                console.error('Failed to load stats:', error);
-                this.showToast('加载统计数据失败', 'error');
+                console.error('加载统计失败:', error);
+                this.showToast('加载统计失败: ' + error.message, 'error');
             }
         }
 
         async loadMoreData() {
-            if (!this.api) return;
+            if (!this.api || !this.connected) return;
 
             try {
-                // 加载文章列表
                 const posts = await this.api.getPosts({ per_page: 10 });
                 const postsContainer = this.panel.querySelector('#wp-posts-list');
 
-                if (posts.length) {
+                if (posts && posts.length) {
                     postsContainer.innerHTML = posts.map(post => `
                         <div class="wp-post-item">
                             <div class="wp-post-item-header">
-                                <div class="wp-post-item-title">${post.title.rendered}</div>
+                                <div class="wp-post-item-title">${post.title.rendered || '无标题'}</div>
                                 <span class="wp-post-item-status ${post.status}">${post.status === 'publish' ? '已发布' : '草稿'}</span>
                             </div>
                             <div class="wp-list-item-meta">${new Date(post.date).toLocaleDateString()}</div>
@@ -1509,7 +1366,6 @@
                         </div>
                     `).join('');
 
-                    // 绑定删除事件
                     postsContainer.querySelectorAll('[data-delete]').forEach(btn => {
                         btn.addEventListener('click', () => this.deletePost(btn.dataset.delete));
                     });
@@ -1517,15 +1373,14 @@
                     postsContainer.innerHTML = `<div class="wp-empty">${Icons.posts}<p>暂无文章</p></div>`;
                 }
 
-                // 加载评论
                 const comments = await this.api.getComments({ per_page: 5 });
                 const commentsContainer = this.panel.querySelector('#wp-comments-list');
 
-                if (comments.length) {
+                if (comments && comments.length) {
                     commentsContainer.innerHTML = comments.map(comment => `
                         <div class="wp-list-item" style="flex-direction: column; align-items: flex-start;">
                             <div class="wp-list-item-title">${comment.author_name}</div>
-                            <div class="wp-list-item-meta" style="margin-top: 4px;">${comment.content.rendered.replace(/<[^>]*>/g, '').slice(0, 100)}...</div>
+                            <div class="wp-list-item-meta" style="margin-top: 4px;">${(comment.content.rendered || '').replace(/<[^>]*>/g, '').slice(0, 100)}...</div>
                         </div>
                     `).join('');
                 } else {
@@ -1533,12 +1388,12 @@
                 }
 
             } catch (error) {
-                console.error('Failed to load more data:', error);
+                console.error('加载数据失败:', error);
             }
         }
 
         async deletePost(id) {
-            if (!confirm('确定要删除这篇文章吗？')) return;
+            if (!confirm('确定要删除这篇文章吗？此操作不可恢复！')) return;
 
             try {
                 await this.api.deletePost(id);
@@ -1549,21 +1404,11 @@
             }
         }
 
-        formatNumber(num) {
-            if (num >= 10000) {
-                return (num / 10000).toFixed(1) + 'w';
-            } else if (num >= 1000) {
-                return (num / 1000).toFixed(1) + 'k';
-            }
-            return num.toString();
-        }
-
         showToast(message, type = 'success') {
             const toast = document.createElement('div');
             toast.className = `wp-toast ${type}`;
             toast.textContent = message;
             document.body.appendChild(toast);
-
             setTimeout(() => {
                 toast.style.animation = 'wpToastIn 0.3s ease reverse';
                 setTimeout(() => toast.remove(), 300);
@@ -1572,7 +1417,6 @@
     }
 
     // ==================== 初始化 ====================
-    // 等待页面加载完成后初始化
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => new WPAdminPanel());
     } else {
