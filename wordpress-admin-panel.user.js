@@ -835,6 +835,18 @@
                             this.useRestRoute = false;
                             console.log('[WP Admin] 使用标准 /wp-json 模式');
                         }
+
+                        // 尝试获取当前用户信息
+                        try {
+                            const user = await this.getCurrentUser();
+                            if (user && user.id) {
+                                this.currentUserId = user.id;
+                                console.log('[WP Admin] 当前用户ID:', user.id, '用户名:', user.name);
+                            }
+                        } catch (userError) {
+                            console.log('[WP Admin] 无法获取用户信息（可能需要认证）:', userError.message);
+                        }
+
                         return { success: true };
                     }
                 } catch (error) {
@@ -1625,18 +1637,20 @@
             btn.disabled = true;
 
             try {
-                // 获取当前用户ID
-                const authorId = await this.api.getCurrentUserId();
-                if (!authorId) {
-                    throw new Error('无法获取用户信息，请检查应用密码是否正确');
-                }
-
                 const postData = {
                     title: title,
                     content: content,
-                    status: status,
-                    author: authorId
+                    status: status
                 };
+
+                // 尝试获取当前用户ID
+                const authorId = this.api.currentUserId || await this.api.getCurrentUserId();
+                if (authorId) {
+                    postData.author = authorId;
+                    console.log('[WP Admin] 使用作者ID:', authorId);
+                } else {
+                    console.log('[WP Admin] 未获取到用户ID，使用默认作者');
+                }
 
                 if (category) {
                     postData.categories = [parseInt(category)];
