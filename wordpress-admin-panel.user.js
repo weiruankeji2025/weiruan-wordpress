@@ -736,8 +736,14 @@
         buildUrl(endpoint) {
             // 移除开头的 /wp/v2 如果存在
             const cleanEndpoint = endpoint.replace(/^\/wp\/v2/, '');
+
             if (this.useRestRoute) {
                 // 使用 ?rest_route= 格式
+                // 需要处理查询参数：/posts?per_page=10 -> rest_route=/wp/v2/posts&per_page=10
+                if (cleanEndpoint.includes('?')) {
+                    const [path, query] = cleanEndpoint.split('?');
+                    return `${this.siteUrl}/?rest_route=/wp/v2${path}&${query}`;
+                }
                 return `${this.siteUrl}/?rest_route=/wp/v2${cleanEndpoint}`;
             }
             return `${this.apiBase}${cleanEndpoint}`;
