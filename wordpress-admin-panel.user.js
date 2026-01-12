@@ -759,10 +759,12 @@
                     const auth = btoa(unescape(encodeURIComponent(credentials)));
                     headers['Authorization'] = `Basic ${auth}`;
                     console.log('[WP Admin] 认证用户:', this.username, '| 密码长度:', this.appPassword.length);
+                } else {
+                    console.warn('[WP Admin] 警告: 未设置认证信息! username:', !!this.username, 'appPassword:', !!this.appPassword);
                 }
 
                 console.log('[WP Admin] 请求:', method, url);
-                console.log('[WP Admin] 请求头:', Object.keys(headers).join(', '));
+                console.log('[WP Admin] 有Authorization头:', 'Authorization' in headers);
 
                 GM_xmlhttpRequest({
                     method: method,
@@ -1148,10 +1150,14 @@
             this.bindEvents();
             this.registerMenuCommand();
 
+            console.log('[WP Admin] 初始化 - siteUrl:', this.siteUrl, 'username:', this.username, 'hasPassword:', !!this.appPassword);
+
             if (this.siteUrl && this.username && this.appPassword) {
                 this.api = new WordPressAPI(this.siteUrl, this.username, this.appPassword);
                 // 恢复保存的useRestRoute状态
                 this.api.useRestRoute = Config.get('useRestRoute', false);
+                this.api.restRoutePrefix = Config.get('restRoutePrefix', '');
+                console.log('[WP Admin] API已创建 - useRestRoute:', this.api.useRestRoute);
                 this.testAndLoad();
             }
         }
@@ -1568,9 +1574,11 @@
                 Config.set('username', this.username);
                 Config.set('appPassword', this.appPassword);
                 Config.set('useRestRoute', testApi.useRestRoute);
+                Config.set('restRoutePrefix', testApi.restRoutePrefix || '');
 
                 // 使用已测试成功的API实例
                 this.api = testApi;
+                console.log('[WP Admin] 配置已保存 - API用户:', this.api.username, '有密码:', !!this.api.appPassword);
                 this.connected = true;
                 this.updateConnectionStatus();
                 this.loadInitialData();
