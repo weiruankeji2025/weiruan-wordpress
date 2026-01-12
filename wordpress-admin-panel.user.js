@@ -115,37 +115,53 @@
             to { opacity: 1; transform: translateY(0); }
         }
         .wp-panel-header {
-            padding: 16px 20px;
+            padding: 12px 16px;
             background: linear-gradient(135deg, #0073aa 0%, #005a87 100%);
             color: white;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            min-height: 48px;
+            flex-shrink: 0;
         }
         .wp-panel-header h3 {
             margin: 0;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .wp-panel-header h3 svg {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
         }
         .wp-panel-header-actions {
             display: flex;
-            gap: 8px;
+            gap: 4px;
+            flex-shrink: 0;
         }
         .wp-panel-header-btn {
             background: rgba(255,255,255,0.2);
             border: none;
             color: white;
-            width: 32px;
-            height: 32px;
+            width: 28px;
+            height: 28px;
             border-radius: 6px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: background 0.2s;
+            flex-shrink: 0;
+        }
+        .wp-panel-header-btn svg {
+            width: 16px;
+            height: 16px;
         }
         .wp-panel-header-btn:hover {
             background: rgba(255,255,255,0.3);
