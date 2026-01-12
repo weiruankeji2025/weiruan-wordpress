@@ -865,13 +865,20 @@
 
             if (this.siteUrl && this.username && this.appPassword) {
                 this.api = new WordPressAPI(this.siteUrl, this.username, this.appPassword);
+                // 恢复保存的useRestRoute状态
+                this.api.useRestRoute = Config.get('useRestRoute', false);
                 this.testAndLoad();
             }
         }
 
         async testAndLoad() {
+            // 重新测试连接，确保useRestRoute状态正确
             const result = await this.api.testConnection();
             this.connected = result.success;
+            // 保存检测到的模式
+            if (this.connected) {
+                Config.set('useRestRoute', this.api.useRestRoute);
+            }
             this.updateConnectionStatus();
             if (this.connected) {
                 this.loadInitialData();
@@ -1237,6 +1244,17 @@
                     return;
                 }
 
+                resultDiv.innerHTML = '<span class="wp-loading"></span> 保存并测试中...';
+
+                // 先测试连接
+                const testApi = new WordPressAPI(url, user, pass);
+                const result = await testApi.testConnection();
+
+                if (!result.success) {
+                    resultDiv.innerHTML = `<div style="color:red;">✗ 连接失败，无法保存<br><small>${result.error}</small></div>`;
+                    return;
+                }
+
                 this.siteUrl = url;
                 this.username = user;
                 this.appPassword = pass;
@@ -1244,9 +1262,13 @@
                 Config.set('siteUrl', this.siteUrl);
                 Config.set('username', this.username);
                 Config.set('appPassword', this.appPassword);
+                Config.set('useRestRoute', testApi.useRestRoute);
 
-                this.api = new WordPressAPI(this.siteUrl, this.username, this.appPassword);
-                await this.testAndLoad();
+                // 使用已测试成功的API实例
+                this.api = testApi;
+                this.connected = true;
+                this.updateConnectionStatus();
+                this.loadInitialData();
 
                 this.panel.querySelector('#wp-site-url-display').textContent = this.siteUrl;
                 this.showToast('配置已保存', 'success');
