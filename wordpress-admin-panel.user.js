@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WordPress 后台管理助手
 // @namespace    https://weiruan.com/
-// @version      1.2.0
+// @version      1.3.0
 // @description  WordPress后台快捷管理工具：发布文章、查看访客数据、网站设置等
 // @author       Weiruan
 // @match        *://*/*
@@ -38,35 +38,46 @@
 
     // ==================== 样式注入 ====================
     const styles = `
+        /* ==================== CSS Reset for Panel ==================== */
+        .wp-admin-panel *, .wp-admin-panel *::before, .wp-admin-panel *::after,
+        .wp-admin-trigger *, .wp-config-overlay * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* ==================== CSS Variables ==================== */
         :root {
-            --wp-panel-primary: #0073aa;
-            --wp-panel-primary-hover: #005a87;
-            --wp-panel-success: #46b450;
-            --wp-panel-warning: #ffb900;
-            --wp-panel-danger: #dc3232;
-            --wp-panel-bg: #ffffff;
-            --wp-panel-bg-secondary: #f6f7f7;
-            --wp-panel-text: #1e1e1e;
-            --wp-panel-text-secondary: #646970;
-            --wp-panel-border: #dcdcde;
-            --wp-panel-shadow: 0 4px 20px rgba(0,0,0,0.15);
-            --wp-panel-radius: 8px;
+            --wp-primary: #0073aa;
+            --wp-primary-dark: #005a87;
+            --wp-success: #46b450;
+            --wp-warning: #ffb900;
+            --wp-danger: #dc3232;
+            --wp-bg: #ffffff;
+            --wp-bg-alt: #f6f7f7;
+            --wp-text: #1e1e1e;
+            --wp-text-light: #646970;
+            --wp-border: #dcdcde;
+            --wp-radius: 8px;
         }
+
         .wp-admin-panel.dark-theme {
-            --wp-panel-primary: #3582c4;
-            --wp-panel-bg: #1e1e1e;
-            --wp-panel-bg-secondary: #2c2c2c;
-            --wp-panel-text: #ffffff;
-            --wp-panel-text-secondary: #a0a0a0;
-            --wp-panel-border: #3c3c3c;
+            --wp-primary: #3582c4;
+            --wp-bg: #1e1e1e;
+            --wp-bg-alt: #2c2c2c;
+            --wp-text: #ffffff;
+            --wp-text-light: #a0a0a0;
+            --wp-border: #3c3c3c;
         }
+
+        /* ==================== Trigger Button ==================== */
         .wp-admin-trigger {
             position: fixed;
             right: 20px;
             bottom: 20px;
             width: 56px;
             height: 56px;
-            background: linear-gradient(135deg, #0073aa 0%, #005a87 100%);
+            background: linear-gradient(135deg, var(--wp-primary) 0%, var(--wp-primary-dark) 100%);
             border-radius: 50%;
             cursor: pointer;
             z-index: 999998;
@@ -86,127 +97,138 @@
             height: 28px;
             fill: white;
         }
+
+        /* ==================== Main Panel ==================== */
         .wp-admin-panel {
             position: fixed;
             right: 20px;
             bottom: 90px;
-            width: 420px;
-            max-height: 75vh;
-            background: var(--wp-panel-bg);
-            border-radius: var(--wp-panel-radius);
-            box-shadow: var(--wp-panel-shadow);
+            width: 400px;
+            max-height: 70vh;
+            background: var(--wp-bg);
+            border-radius: var(--wp-radius);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
             z-index: 999999;
             display: none;
             flex-direction: column;
-            overflow: visible;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             font-size: 14px;
-            color: var(--wp-panel-text);
-        }
-        .wp-admin-panel > * {
-            overflow: visible;
+            color: var(--wp-text);
         }
         .wp-admin-panel.active {
             display: flex;
-            animation: wpPanelSlideIn 0.3s ease;
+            animation: wpSlideIn 0.3s ease;
         }
-        @keyframes wpPanelSlideIn {
+        @keyframes wpSlideIn {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
+        /* ==================== Panel Header ==================== */
         .wp-panel-header {
-            padding: 12px 16px;
-            background: linear-gradient(135deg, #0073aa 0%, #005a87 100%);
-            color: white;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            min-height: 48px;
-            flex-shrink: 0;
+            padding: 14px 16px;
+            background: linear-gradient(135deg, var(--wp-primary) 0%, var(--wp-primary-dark) 100%);
+            color: white;
+            border-radius: var(--wp-radius) var(--wp-radius) 0 0;
         }
         .wp-panel-header h3 {
-            margin: 0;
-            font-size: 15px;
+            font-size: 16px;
             font-weight: 600;
             display: flex;
             align-items: center;
-            gap: 6px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            gap: 8px;
         }
         .wp-panel-header h3 svg {
-            width: 20px;
-            height: 20px;
-            flex-shrink: 0;
+            width: 22px;
+            height: 22px;
+            fill: currentColor;
         }
         .wp-panel-header-actions {
             display: flex;
-            gap: 4px;
-            flex-shrink: 0;
+            gap: 6px;
         }
         .wp-panel-header-btn {
+            width: 30px;
+            height: 30px;
             background: rgba(255,255,255,0.2);
             border: none;
-            color: white;
-            width: 28px;
-            height: 28px;
             border-radius: 6px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
+            color: white;
             transition: background 0.2s;
-            flex-shrink: 0;
-        }
-        .wp-panel-header-btn svg {
-            width: 16px;
-            height: 16px;
         }
         .wp-panel-header-btn:hover {
             background: rgba(255,255,255,0.3);
         }
+        .wp-panel-header-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+
+        /* ==================== Connection Status ==================== */
+        .wp-connection-status {
+            padding: 8px 16px;
+            font-size: 12px;
+            border-bottom: 1px solid var(--wp-border);
+        }
+        .wp-connection-status.connected {
+            background: #d4edda;
+            color: #155724;
+        }
+        .wp-connection-status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        /* ==================== Tabs ==================== */
         .wp-panel-tabs {
             display: flex;
-            background: var(--wp-panel-bg-secondary);
-            border-bottom: 1px solid var(--wp-panel-border);
-            overflow-x: auto;
+            background: var(--wp-bg-alt);
+            border-bottom: 1px solid var(--wp-border);
         }
         .wp-panel-tab {
             flex: 1;
-            padding: 12px 8px;
+            padding: 10px 6px;
             text-align: center;
             cursor: pointer;
             border: none;
             background: transparent;
-            color: var(--wp-panel-text-secondary);
+            color: var(--wp-text-light);
             font-size: 12px;
-            transition: all 0.2s;
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 4px;
-            min-width: 70px;
+            transition: all 0.2s;
         }
         .wp-panel-tab:hover {
-            background: var(--wp-panel-bg);
-            color: var(--wp-panel-primary);
+            background: var(--wp-bg);
+            color: var(--wp-primary);
         }
         .wp-panel-tab.active {
-            background: var(--wp-panel-bg);
-            color: var(--wp-panel-primary);
-            border-bottom: 2px solid var(--wp-panel-primary);
+            background: var(--wp-bg);
+            color: var(--wp-primary);
+            box-shadow: inset 0 -2px 0 var(--wp-primary);
         }
         .wp-panel-tab svg {
             width: 20px;
             height: 20px;
+            fill: currentColor;
         }
+
+        /* ==================== Content Area ==================== */
         .wp-panel-content {
             flex: 1;
             overflow-y: auto;
-            overflow-x: visible;
             padding: 16px;
-            position: relative;
+            max-height: calc(70vh - 140px);
         }
         .wp-panel-section {
             display: none;
@@ -214,125 +236,128 @@
         .wp-panel-section.active {
             display: block;
         }
+
+        /* ==================== Form Elements ==================== */
         .wp-form-group {
-            margin-bottom: 16px;
+            margin-bottom: 14px;
         }
         .wp-form-label {
             display: block;
             margin-bottom: 6px;
             font-weight: 500;
-            color: var(--wp-panel-text);
+            color: var(--wp-text);
+            font-size: 13px;
         }
         .wp-form-input,
         .wp-form-select,
         .wp-form-textarea {
             width: 100%;
             padding: 10px 12px;
-            border: 1px solid var(--wp-panel-border);
+            border: 1px solid var(--wp-border);
             border-radius: 6px;
             font-size: 14px;
-            background: var(--wp-panel-bg);
-            color: var(--wp-panel-text);
+            background: var(--wp-bg);
+            color: var(--wp-text);
             transition: border-color 0.2s, box-shadow 0.2s;
-            box-sizing: border-box;
         }
         .wp-form-input:focus,
         .wp-form-select:focus,
         .wp-form-textarea:focus {
             outline: none;
-            border-color: var(--wp-panel-primary);
+            border-color: var(--wp-primary);
             box-shadow: 0 0 0 3px rgba(0,115,170,0.1);
         }
-        .wp-form-select {
-            position: relative;
-            z-index: 10;
-        }
         .wp-form-textarea {
-            min-height: 120px;
+            min-height: 100px;
             resize: vertical;
         }
+
+        /* ==================== Editor ==================== */
         .wp-editor-toolbar {
             display: flex;
             flex-wrap: wrap;
             gap: 4px;
             padding: 8px;
-            background: var(--wp-panel-bg-secondary);
-            border: 1px solid var(--wp-panel-border);
+            background: var(--wp-bg-alt);
+            border: 1px solid var(--wp-border);
             border-bottom: none;
             border-radius: 6px 6px 0 0;
         }
         .wp-editor-btn {
-            width: 32px;
-            height: 32px;
+            width: 30px;
+            height: 30px;
             border: none;
-            background: var(--wp-panel-bg);
+            background: var(--wp-bg);
             border-radius: 4px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
+            color: var(--wp-text);
             transition: all 0.2s;
-            color: var(--wp-panel-text);
         }
         .wp-editor-btn:hover {
-            background: var(--wp-panel-primary);
+            background: var(--wp-primary);
             color: white;
         }
+        .wp-editor-btn svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
         .wp-editor-content {
-            min-height: 200px;
-            max-height: 300px;
+            min-height: 150px;
+            max-height: 200px;
             overflow-y: auto;
             padding: 12px;
-            border: 1px solid var(--wp-panel-border);
+            border: 1px solid var(--wp-border);
             border-radius: 0 0 6px 6px;
-            background: var(--wp-panel-bg);
+            background: var(--wp-bg);
             outline: none;
         }
         .wp-editor-content:focus {
-            border-color: var(--wp-panel-primary);
+            border-color: var(--wp-primary);
         }
         .wp-editor-content:empty:before {
             content: attr(data-placeholder);
-            color: var(--wp-panel-text-secondary);
+            color: var(--wp-text-light);
         }
+
+        /* ==================== Buttons ==================== */
         .wp-btn {
-            padding: 10px 20px;
+            padding: 10px 16px;
             border: none;
             border-radius: 6px;
             cursor: pointer;
             font-size: 14px;
             font-weight: 500;
-            transition: all 0.2s;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 6px;
+            transition: all 0.2s;
         }
         .wp-btn-primary {
-            background: var(--wp-panel-primary);
+            background: var(--wp-primary);
             color: white;
         }
         .wp-btn-primary:hover {
-            background: var(--wp-panel-primary-hover);
+            background: var(--wp-primary-dark);
         }
         .wp-btn-primary:disabled {
             background: #ccc;
             cursor: not-allowed;
         }
         .wp-btn-secondary {
-            background: var(--wp-panel-bg-secondary);
-            color: var(--wp-panel-text);
-            border: 1px solid var(--wp-panel-border);
+            background: var(--wp-bg-alt);
+            color: var(--wp-text);
+            border: 1px solid var(--wp-border);
         }
         .wp-btn-secondary:hover {
-            background: var(--wp-panel-border);
-        }
-        .wp-btn-success {
-            background: var(--wp-panel-success);
-            color: white;
+            background: var(--wp-border);
         }
         .wp-btn-danger {
-            background: var(--wp-panel-danger);
+            background: var(--wp-danger);
             color: white;
         }
         .wp-btn-block {
@@ -342,56 +367,119 @@
             display: flex;
             gap: 8px;
         }
+        .wp-btn svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+        /* ==================== Stats Grid ==================== */
         .wp-stats-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            margin-bottom: 20px;
+            gap: 10px;
+            margin-bottom: 16px;
         }
         .wp-stat-card {
-            padding: 16px;
-            background: var(--wp-panel-bg-secondary);
+            padding: 14px;
+            background: var(--wp-bg-alt);
             border-radius: 8px;
             text-align: center;
         }
         .wp-stat-value {
-            font-size: 28px;
+            font-size: 24px;
             font-weight: 700;
-            color: var(--wp-panel-primary);
+            color: var(--wp-primary);
             margin-bottom: 4px;
         }
         .wp-stat-label {
-            font-size: 12px;
-            color: var(--wp-panel-text-secondary);
+            font-size: 11px;
+            color: var(--wp-text-light);
         }
+
+        /* ==================== List Items ==================== */
         .wp-list-item {
-            padding: 12px;
-            border-bottom: 1px solid var(--wp-panel-border);
+            padding: 10px;
+            border-bottom: 1px solid var(--wp-border);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            transition: background 0.2s;
+            gap: 10px;
         }
         .wp-list-item:last-child {
             border-bottom: none;
         }
-        .wp-list-item:hover {
-            background: var(--wp-panel-bg-secondary);
-        }
         .wp-list-item-title {
             font-weight: 500;
-            margin-bottom: 4px;
+            font-size: 13px;
+            margin-bottom: 2px;
         }
         .wp-list-item-meta {
-            font-size: 12px;
-            color: var(--wp-panel-text-secondary);
+            font-size: 11px;
+            color: var(--wp-text-light);
         }
+
+        /* ==================== Post Items ==================== */
+        .wp-post-item {
+            padding: 12px;
+            border: 1px solid var(--wp-border);
+            border-radius: 6px;
+            margin-bottom: 8px;
+            background: var(--wp-bg);
+        }
+        .wp-post-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 6px;
+            gap: 8px;
+        }
+        .wp-post-item-title {
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--wp-text);
+            flex: 1;
+            line-height: 1.4;
+        }
+        .wp-post-item-status {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            background: var(--wp-bg-alt);
+            white-space: nowrap;
+        }
+        .wp-post-item-status.publish { background: #d4edda; color: #155724; }
+        .wp-post-item-status.draft { background: #fff3cd; color: #856404; }
+        .wp-post-item-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+        }
+        .wp-post-item-btn {
+            padding: 4px 10px;
+            font-size: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background: var(--wp-bg-alt);
+            color: var(--wp-text);
+            transition: all 0.2s;
+        }
+        .wp-post-item-btn:hover {
+            background: var(--wp-border);
+        }
+        .wp-post-item-btn.wp-btn-danger {
+            background: var(--wp-danger);
+            color: white;
+        }
+
+        /* ==================== Settings ==================== */
         .wp-settings-item {
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 12px 0;
-            border-bottom: 1px solid var(--wp-panel-border);
+            border-bottom: 1px solid var(--wp-border);
         }
         .wp-settings-item:last-child {
             border-bottom: none;
@@ -400,13 +488,13 @@
             position: relative;
             width: 44px;
             height: 24px;
-            background: var(--wp-panel-border);
+            background: var(--wp-border);
             border-radius: 12px;
             cursor: pointer;
             transition: background 0.3s;
         }
         .wp-toggle.active {
-            background: var(--wp-panel-success);
+            background: var(--wp-success);
         }
         .wp-toggle::after {
             content: '';
@@ -422,43 +510,122 @@
         .wp-toggle.active::after {
             transform: translateX(20px);
         }
+
+        /* ==================== Quick Actions ==================== */
         .wp-quick-actions {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
+            gap: 10px;
         }
         .wp-quick-action {
-            padding: 16px 12px;
-            background: var(--wp-panel-bg-secondary);
-            border: 1px solid var(--wp-panel-border);
+            padding: 14px 8px;
+            background: var(--wp-bg-alt);
+            border: 1px solid var(--wp-border);
             border-radius: 8px;
             text-align: center;
             cursor: pointer;
             transition: all 0.2s;
             text-decoration: none;
-            color: var(--wp-panel-text);
+            color: var(--wp-text);
         }
         .wp-quick-action:hover {
-            border-color: var(--wp-panel-primary);
-            background: var(--wp-panel-bg);
+            border-color: var(--wp-primary);
             transform: translateY(-2px);
         }
         .wp-quick-action svg {
-            width: 24px;
-            height: 24px;
-            margin-bottom: 8px;
-            color: var(--wp-panel-primary);
+            width: 22px;
+            height: 22px;
+            margin-bottom: 6px;
+            fill: var(--wp-primary);
         }
         .wp-quick-action-label {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 500;
         }
+
+        /* ==================== Charts ==================== */
+        .wp-chart-container {
+            padding: 14px;
+            background: var(--wp-bg-alt);
+            border-radius: 8px;
+            margin-bottom: 14px;
+        }
+        .wp-chart-title {
+            font-weight: 600;
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+        .wp-chart-bar {
+            display: flex;
+            align-items: center;
+            margin-bottom: 6px;
+            gap: 8px;
+        }
+        .wp-chart-bar-label {
+            width: 70px;
+            font-size: 11px;
+            color: var(--wp-text-light);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .wp-chart-bar-track {
+            flex: 1;
+            height: 18px;
+            background: var(--wp-bg);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .wp-chart-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--wp-primary), #00a0d2);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .wp-chart-bar-value {
+            width: 45px;
+            text-align: right;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        /* ==================== Info Box ==================== */
+        .wp-info-box {
+            padding: 10px 12px;
+            background: #e7f3ff;
+            border: 1px solid #b3d7ff;
+            border-radius: 6px;
+            margin-bottom: 14px;
+            font-size: 12px;
+            color: #0056b3;
+            line-height: 1.5;
+        }
+
+        /* ==================== Empty State ==================== */
+        .wp-empty {
+            text-align: center;
+            padding: 30px 16px;
+            color: var(--wp-text-light);
+        }
+        .wp-empty svg {
+            width: 40px;
+            height: 40px;
+            margin-bottom: 10px;
+            opacity: 0.5;
+            fill: currentColor;
+        }
+        .wp-empty p {
+            margin: 0;
+            font-size: 13px;
+        }
+
+        /* ==================== Toast ==================== */
         .wp-toast {
             position: fixed;
             top: 20px;
             right: 20px;
-            padding: 14px 20px;
-            background: var(--wp-panel-bg);
+            padding: 12px 18px;
+            background: white;
             border-radius: 8px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.2);
             z-index: 1000000;
@@ -467,37 +634,31 @@
             gap: 10px;
             animation: wpToastIn 0.3s ease;
             color: #333;
+            font-size: 14px;
         }
-        .wp-toast.success { border-left: 4px solid var(--wp-panel-success); }
-        .wp-toast.error { border-left: 4px solid var(--wp-panel-danger); }
-        .wp-toast.warning { border-left: 4px solid var(--wp-panel-warning); }
+        .wp-toast.success { border-left: 4px solid var(--wp-success); }
+        .wp-toast.error { border-left: 4px solid var(--wp-danger); }
+        .wp-toast.warning { border-left: 4px solid var(--wp-warning); }
         @keyframes wpToastIn {
             from { opacity: 0; transform: translateX(100px); }
             to { opacity: 1; transform: translateX(0); }
         }
+
+        /* ==================== Loading ==================== */
         .wp-loading {
             display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 2px solid var(--wp-panel-border);
-            border-top-color: var(--wp-panel-primary);
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--wp-border);
+            border-top-color: var(--wp-primary);
             border-radius: 50%;
             animation: wpSpin 0.8s linear infinite;
         }
         @keyframes wpSpin {
             to { transform: rotate(360deg); }
         }
-        .wp-empty {
-            text-align: center;
-            padding: 40px 20px;
-            color: var(--wp-panel-text-secondary);
-        }
-        .wp-empty svg {
-            width: 48px;
-            height: 48px;
-            margin-bottom: 12px;
-            opacity: 0.5;
-        }
+
+        /* ==================== Config Modal ==================== */
         .wp-config-overlay {
             position: fixed;
             inset: 0;
@@ -509,125 +670,28 @@
         }
         .wp-config-modal {
             width: 90%;
-            max-width: 500px;
-            background: var(--wp-panel-bg);
-            border-radius: var(--wp-panel-radius);
-            padding: 24px;
+            max-width: 450px;
+            background: white;
+            border-radius: var(--wp-radius);
+            padding: 20px;
             max-height: 80vh;
             overflow-y: auto;
             color: #333;
         }
         .wp-config-modal h3 {
-            margin: 0 0 20px;
-            color: var(--wp-panel-text);
+            margin: 0 0 16px;
+            font-size: 18px;
         }
-        .wp-post-item {
-            padding: 12px;
-            border: 1px solid var(--wp-panel-border);
-            border-radius: 6px;
-            margin-bottom: 8px;
-            background: var(--wp-panel-bg);
-        }
-        .wp-post-item-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 8px;
-        }
-        .wp-post-item-title {
+
+        /* ==================== Section Titles ==================== */
+        .wp-section-title {
+            font-size: 13px;
             font-weight: 600;
-            color: var(--wp-panel-text);
-            flex: 1;
+            margin: 16px 0 10px;
+            color: var(--wp-text);
         }
-        .wp-post-item-status {
-            font-size: 11px;
-            padding: 2px 8px;
-            border-radius: 10px;
-            background: var(--wp-panel-bg-secondary);
-        }
-        .wp-post-item-status.publish { background: #d4edda; color: #155724; }
-        .wp-post-item-status.draft { background: #fff3cd; color: #856404; }
-        .wp-post-item-actions {
-            display: flex;
-            gap: 6px;
-        }
-        .wp-post-item-btn {
-            padding: 4px 8px;
-            font-size: 12px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .wp-chart-container {
-            padding: 16px;
-            background: var(--wp-panel-bg-secondary);
-            border-radius: 8px;
-            margin-bottom: 16px;
-        }
-        .wp-chart-title {
-            font-weight: 600;
-            margin-bottom: 12px;
-        }
-        .wp-chart-bar {
-            display: flex;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-        .wp-chart-bar-label {
-            width: 80px;
-            font-size: 12px;
-            color: var(--wp-panel-text-secondary);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .wp-chart-bar-track {
-            flex: 1;
-            height: 20px;
-            background: var(--wp-panel-bg);
-            border-radius: 4px;
-            overflow: hidden;
-        }
-        .wp-chart-bar-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--wp-panel-primary), #00a0d2);
-            border-radius: 4px;
-            transition: width 0.5s ease;
-        }
-        .wp-chart-bar-value {
-            width: 50px;
-            text-align: right;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        .wp-info-box {
-            padding: 12px;
-            background: #e7f3ff;
-            border: 1px solid #b3d7ff;
-            border-radius: 6px;
-            margin-bottom: 16px;
-            font-size: 12px;
-            color: #0056b3;
-        }
-        .wp-auth-form {
-            margin-top: 16px;
-            padding-top: 16px;
-            border-top: 1px solid var(--wp-panel-border);
-        }
-        .wp-connection-status {
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            margin-bottom: 12px;
-        }
-        .wp-connection-status.connected {
-            background: #d4edda;
-            color: #155724;
-        }
-        .wp-connection-status.disconnected {
-            background: #f8d7da;
-            color: #721c24;
+        .wp-section-title:first-child {
+            margin-top: 0;
         }
     `;
 
@@ -1171,19 +1235,15 @@
                 <div class="wp-btn-group">
                     <button class="wp-btn wp-btn-primary wp-btn-block" id="wp-publish-btn">发布文章</button>
                 </div>
-                <div style="margin-top: 20px;">
-                    <h4 style="margin-bottom: 12px; font-size: 14px;">最近文章</h4>
-                    <div id="wp-recent-posts"><div class="wp-empty">${Icons.posts}<p>请先配置站点</p></div></div>
-                </div>
+                <h4 class="wp-section-title">最近文章</h4>
+                <div id="wp-recent-posts"><div class="wp-empty">${Icons.posts}<p>请先配置站点</p></div></div>
             `;
         }
 
         getStatsHTML() {
             return `
-                <div class="wp-info-box" id="wp-stats-info">
-                    正在检测统计插件...
-                </div>
-                <h4 style="margin-bottom: 12px; font-size: 14px;">访问统计</h4>
+                <div class="wp-info-box" id="wp-stats-info">正在检测统计插件...</div>
+                <h4 class="wp-section-title">访问统计</h4>
                 <div class="wp-stats-grid" id="wp-visitor-stats">
                     <div class="wp-stat-card">
                         <div class="wp-stat-value" id="stat-today-views">--</div>
@@ -1202,7 +1262,7 @@
                         <div class="wp-stat-label">总访问量</div>
                     </div>
                 </div>
-                <h4 style="margin: 16px 0 12px; font-size: 14px;">内容统计</h4>
+                <h4 class="wp-section-title">内容统计</h4>
                 <div class="wp-stats-grid" id="wp-stats-overview">
                     <div class="wp-stat-card">
                         <div class="wp-stat-value" id="stat-total-posts">--</div>
@@ -1249,7 +1309,7 @@
                     </div>
                     <div class="wp-toggle ${this.darkMode ? 'active' : ''}" id="wp-dark-toggle"></div>
                 </div>
-                <h4 style="margin: 20px 0 12px; font-size: 14px;">快捷链接</h4>
+                <h4 class="wp-section-title">快捷链接</h4>
                 <div class="wp-quick-actions" id="wp-quick-links">
                     <a class="wp-quick-action" href="#" data-link="wp-admin">${Icons.settings}<div class="wp-quick-action-label">仪表盘</div></a>
                     <a class="wp-quick-action" href="#" data-link="wp-admin/edit.php">${Icons.posts}<div class="wp-quick-action-label">所有文章</div></a>
@@ -1263,11 +1323,11 @@
 
         getMoreHTML() {
             return `
-                <h4 style="margin-bottom: 12px; font-size: 14px;">文章管理</h4>
+                <h4 class="wp-section-title" style="margin-top:0;">文章管理</h4>
                 <div id="wp-posts-list"><div class="wp-empty">${Icons.posts}<p>请先配置站点</p></div></div>
-                <h4 style="margin: 20px 0 12px; font-size: 14px;">最新评论</h4>
+                <h4 class="wp-section-title">最新评论</h4>
                 <div id="wp-comments-list"><div class="wp-empty">${Icons.comments}<p>请先配置站点</p></div></div>
-                <h4 style="margin: 20px 0 12px; font-size: 14px;">快捷操作</h4>
+                <h4 class="wp-section-title">快捷操作</h4>
                 <div class="wp-quick-actions">
                     <button class="wp-quick-action" id="wp-view-site">${Icons.view}<div class="wp-quick-action-label">查看网站</div></button>
                     <button class="wp-quick-action" id="wp-refresh-all">${Icons.refresh}<div class="wp-quick-action-label">刷新数据</div></button>
