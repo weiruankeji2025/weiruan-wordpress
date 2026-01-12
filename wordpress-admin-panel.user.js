@@ -919,6 +919,19 @@
             return this.request(this.buildUrl('/wp/v2/users/me'));
         }
 
+        // 获取当前用户ID（带缓存）
+        async getCurrentUserId() {
+            if (this.currentUserId) return this.currentUserId;
+            try {
+                const user = await this.getCurrentUser();
+                this.currentUserId = user.id;
+                return user.id;
+            } catch (e) {
+                console.error('[WP Admin] 获取用户ID失败:', e);
+                return null;
+            }
+        }
+
         // 站点信息
         async getSiteInfo() {
             return this.request(this.buildUrl('/'));
@@ -1612,10 +1625,17 @@
             btn.disabled = true;
 
             try {
+                // 获取当前用户ID
+                const authorId = await this.api.getCurrentUserId();
+                if (!authorId) {
+                    throw new Error('无法获取用户信息，请检查应用密码是否正确');
+                }
+
                 const postData = {
                     title: title,
                     content: content,
-                    status: status
+                    status: status,
+                    author: authorId
                 };
 
                 if (category) {
