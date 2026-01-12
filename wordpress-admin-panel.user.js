@@ -754,11 +754,17 @@
 
                 // 添加认证头
                 if (this.username && this.appPassword) {
-                    const auth = btoa(`${this.username}:${this.appPassword}`);
+                    // 应用密码可能包含空格，需要保留
+                    const credentials = `${this.username}:${this.appPassword}`;
+                    const auth = btoa(unescape(encodeURIComponent(credentials)));
                     headers['Authorization'] = `Basic ${auth}`;
+                    console.log('[WP Admin] 认证用户:', this.username, '| 密码长度:', this.appPassword.length);
+                } else {
+                    console.warn('[WP Admin] 警告: 未设置认证信息! username:', !!this.username, 'appPassword:', !!this.appPassword);
                 }
 
                 console.log('[WP Admin] 请求:', method, url);
+                console.log('[WP Admin] 有Authorization头:', 'Authorization' in headers);
 
                 GM_xmlhttpRequest({
                     method: method,
@@ -767,6 +773,9 @@
                     data: options.body || null,
                     onload: (response) => {
                         console.log('[WP Admin] 响应:', response.status, response.finalUrl || url);
+                        if (response.status === 401 || response.status === 403) {
+                            console.error('[WP Admin] 认证失败! 请检查用户名和应用密码');
+                        }
                         try {
                             if (response.status >= 200 && response.status < 300) {
                                 // 检查是否是JSON
@@ -780,14 +789,21 @@
                                 resolve(data);
                             } else {
                                 let errorMsg = `HTTP ${response.status}`;
+                                let errorCode = '';
                                 try {
                                     const errData = JSON.parse(response.responseText);
                                     errorMsg = errData.message || errorMsg;
+                                    errorCode = errData.code || '';
+                                    console.error('[WP Admin] API错误:', errData);
                                 } catch(e) {
                                     // 如果不是JSON，可能是HTML错误页
                                     if (response.responseText.includes('<')) {
                                         errorMsg += ' (返回了HTML页面)';
                                     }
+                                }
+                                // 特殊处理认证错误
+                                if (errorCode === 'rest_cannot_create' || errorCode === 'rest_cannot_edit') {
+                                    errorMsg += '\n\n请检查：\n1. 用户名是否正确\n2. 应用密码是否有效\n3. 用户是否有发布权限';
                                 }
                                 reject(new Error(errorMsg));
                             }
@@ -1134,10 +1150,14 @@
             this.bindEvents();
             this.registerMenuCommand();
 
+            console.log('[WP Admin] 初始化 - siteUrl:', this.siteUrl, 'username:', this.username, 'hasPassword:', !!this.appPassword);
+
             if (this.siteUrl && this.username && this.appPassword) {
                 this.api = new WordPressAPI(this.siteUrl, this.username, this.appPassword);
                 // 恢复保存的useRestRoute状态
                 this.api.useRestRoute = Config.get('useRestRoute', false);
+                this.api.restRoutePrefix = Config.get('restRoutePrefix', '');
+                console.log('[WP Admin] API已创建 - useRestRoute:', this.api.useRestRoute);
                 this.testAndLoad();
             }
         }
@@ -1554,9 +1574,11 @@
                 Config.set('username', this.username);
                 Config.set('appPassword', this.appPassword);
                 Config.set('useRestRoute', testApi.useRestRoute);
+                Config.set('restRoutePrefix', testApi.restRoutePrefix || '');
 
                 // 使用已测试成功的API实例
                 this.api = testApi;
+                console.log('[WP Admin] 配置已保存 - API用户:', this.api.username, '有密码:', !!this.api.appPassword);
                 this.connected = true;
                 this.updateConnectionStatus();
                 this.loadInitialData();
