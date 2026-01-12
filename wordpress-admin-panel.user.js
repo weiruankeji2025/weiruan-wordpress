@@ -650,6 +650,7 @@
             this.apiBase = `${this.siteUrl}/wp-json/wp/v2`;
             this.username = username;
             this.appPassword = appPassword;
+            this.useRestRoute = false; // 某些站点需要使用 ?rest_route= 格式
         }
 
         // 使用 GM_xmlhttpRequest 进行跨域请求
@@ -700,72 +701,104 @@
             });
         }
 
-        // 测试连接
+        // 测试连接 - 尝试多个端点
         async testConnection() {
-            try {
-                await this.request(`${this.siteUrl}/wp-json`);
-                return { success: true };
-            } catch (error) {
-                return { success: false, error: error.message };
+            const endpoints = [
+                `${this.siteUrl}/wp-json/wp/v2/posts?per_page=1`,
+                `${this.siteUrl}/wp-json`,
+                `${this.siteUrl}/?rest_route=/wp/v2/posts&per_page=1`,
+                `${this.siteUrl}/?rest_route=/`
+            ];
+
+            for (const endpoint of endpoints) {
+                try {
+                    const result = await this.request(endpoint);
+                    // 检测是否是WordPress REST API响应
+                    if (result && (Array.isArray(result) || result.name || result.namespaces)) {
+                        // 如果使用rest_route参数成功，更新apiBase
+                        if (endpoint.includes('rest_route')) {
+                            this.useRestRoute = true;
+                        }
+                        return { success: true };
+                    }
+                } catch (error) {
+                    continue;
+                }
             }
+
+            return {
+                success: false,
+                error: 'REST API不可用。请检查：\n1. 站点地址是否正确\n2. WordPress版本是否≥4.7\n3. REST API是否被禁用'
+            };
+        }
+
+        // 构建API URL
+        buildUrl(endpoint) {
+            // 移除开头的 /wp/v2 如果存在
+            const cleanEndpoint = endpoint.replace(/^\/wp\/v2/, '');
+            if (this.useRestRoute) {
+                // 使用 ?rest_route= 格式
+                return `${this.siteUrl}/?rest_route=/wp/v2${cleanEndpoint}`;
+            }
+            return `${this.apiBase}${cleanEndpoint}`;
         }
 
         // 文章相关
         async getPosts(params = {}) {
             const query = new URLSearchParams({ per_page: 10, ...params }).toString();
-            return this.request(`/posts?${query}`);
+            return this.request(this.buildUrl(`/wp/v2/posts?${query}`));
         }
 
         async createPost(data) {
-            return this.request('/posts', {
+            return this.request(this.buildUrl('/wp/v2/posts'), {
                 method: 'POST',
                 body: JSON.stringify(data)
             });
         }
 
         async updatePost(id, data) {
-            return this.request(`/posts/${id}`, {
+            return this.request(this.buildUrl(`/wp/v2/posts/${id}`), {
                 method: 'POST',
                 body: JSON.stringify(data)
             });
         }
 
         async deletePost(id) {
-            return this.request(`/posts/${id}?force=true`, {
+            return this.request(this.buildUrl(`/wp/v2/posts/${id}?force=true`), {
                 method: 'DELETE'
             });
         }
 
         // 分类和标签
         async getCategories() {
-            return this.request('/categories?per_page=100');
+            return this.request(this.buildUrl('/wp/v2/categories?per_page=100'));
         }
 
         async getTags() {
-            return this.request('/tags?per_page=100');
+            return this.request(this.buildUrl('/wp/v2/tags?per_page=100'));
         }
 
         // 评论
         async getComments(params = {}) {
             const query = new URLSearchParams({ per_page: 10, ...params }).toString();
-            return this.request(`/comments?${query}`);
+            return this.request(this.buildUrl(`/wp/v2/comments?${query}`));
         }
 
         // 用户信息
         async getCurrentUser() {
-            return this.request('/users/me');
+            return this.request(this.buildUrl('/wp/v2/users/me'));
         }
 
         // 站点信息
         async getSiteInfo() {
-            return this.request(`${this.siteUrl}/wp-json`);
+            return this.request(this.buildUrl('/'));
         }
 
         // 获取统计数据 - 基于文章数据
         async getStats() {
             try {
                 // 获取所有已发布文章
-                const allPosts = await this.request('/posts?per_page=100&status=publish');
+                const allPosts = await this.request(this.buildUrl('/wp/v2/posts?per_page=100&status=publish'));
                 const totalPosts = allPosts.length;
 
                 // 计算时间范围内的文章
@@ -792,7 +825,7 @@
                 });
 
                 // 获取评论数
-                const comments = await this.request('/comments?per_page=100');
+                const comments = await this.request(this.buildUrl('/wp/v2/comments?per_page=100'));
                 const totalComments = comments.length;
 
                 return {
@@ -1131,8 +1164,12 @@
                 <div class="wp-config-modal">
                     <h3>配置WordPress站点</h3>
                     <div class="wp-info-box">
-                        需要使用WordPress应用密码进行认证。<br>
-                        在WordPress后台 → 用户 → 个人资料 → 应用程序密码 中创建。
+                        <strong>配置步骤：</strong><br>
+                        1. 输入WordPress站点完整地址（如 https://example.com）<br>
+                        2. 输入WordPress管理员用户名<br>
+                        3. 在WordPress后台创建应用密码：<br>
+                        &nbsp;&nbsp;&nbsp;用户 → 个人资料 → 应用程序密码<br>
+                        4. 点击"测试连接"验证配置
                     </div>
                     <div class="wp-form-group">
                         <label class="wp-form-label">站点地址</label>
@@ -1163,7 +1200,7 @@
             const resultDiv = overlay.querySelector('#wp-cfg-result');
 
             testBtn.addEventListener('click', async () => {
-                const url = overlay.querySelector('#wp-cfg-url').value.trim();
+                const url = overlay.querySelector('#wp-cfg-url').value.trim().replace(/\/$/, '');
                 const user = overlay.querySelector('#wp-cfg-user').value.trim();
                 const pass = overlay.querySelector('#wp-cfg-pass').value.trim();
 
@@ -1172,14 +1209,21 @@
                     return;
                 }
 
-                resultDiv.innerHTML = '<span class="wp-loading"></span> 测试中...';
+                // 验证URL格式
+                if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                    resultDiv.innerHTML = '<span style="color:red;">站点地址必须以 http:// 或 https:// 开头</span>';
+                    return;
+                }
+
+                resultDiv.innerHTML = '<span class="wp-loading"></span> 测试连接中...';
                 const testApi = new WordPressAPI(url, user, pass);
                 const result = await testApi.testConnection();
 
                 if (result.success) {
-                    resultDiv.innerHTML = '<span style="color:green;">✓ 连接成功！</span>';
+                    const mode = testApi.useRestRoute ? '(使用rest_route模式)' : '';
+                    resultDiv.innerHTML = `<span style="color:green;">✓ 连接成功！${mode}</span>`;
                 } else {
-                    resultDiv.innerHTML = `<span style="color:red;">✗ 连接失败: ${result.error}</span>`;
+                    resultDiv.innerHTML = `<div style="color:red;">✗ 连接失败<br><small style="white-space:pre-wrap;">${result.error}</small></div>`;
                 }
             });
 
