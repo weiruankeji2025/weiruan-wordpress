@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WordPress 后台管理助手
 // @namespace    https://weiruan.com/
-// @version      1.1.0
+// @version      1.2.0
 // @description  WordPress后台快捷管理工具：发布文章、查看访客数据、网站设置等
 // @author       Weiruan
 // @match        *://*/*
@@ -98,10 +98,13 @@
             z-index: 999999;
             display: none;
             flex-direction: column;
-            overflow: hidden;
+            overflow: visible;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             font-size: 14px;
             color: var(--wp-panel-text);
+        }
+        .wp-admin-panel > * {
+            overflow: visible;
         }
         .wp-admin-panel.active {
             display: flex;
@@ -185,7 +188,9 @@
         .wp-panel-content {
             flex: 1;
             overflow-y: auto;
+            overflow-x: visible;
             padding: 16px;
+            position: relative;
         }
         .wp-panel-section {
             display: none;
@@ -221,6 +226,10 @@
             outline: none;
             border-color: var(--wp-panel-primary);
             box-shadow: 0 0 0 3px rgba(0,115,170,0.1);
+        }
+        .wp-form-select {
+            position: relative;
+            z-index: 10;
         }
         .wp-form-textarea {
             min-height: 120px;
@@ -861,7 +870,8 @@
                         id: post.id,
                         title: post.title.rendered.replace(/<[^>]*>/g, ''),
                         date: post.date,
-                        link: post.link
+                        link: post.link,
+                        views: post.post_views_count || post.views || 0 // Post Views Counter 插件
                     });
                 });
 
@@ -877,12 +887,127 @@
                         month: monthPosts
                     },
                     comments: totalComments,
-                    recentPosts: postStats.slice(0, 5)
+                    recentPosts: postStats.slice(0, 5),
+                    popularPosts: [...postStats].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 5)
                 };
             } catch (error) {
                 console.error('获取统计失败:', error);
                 throw error;
             }
+        }
+
+        // 尝试获取访客统计数据
+        async getVisitorStats() {
+            const result = {
+                available: false,
+                plugin: null,
+                today: 0,
+                week: 0,
+                month: 0,
+                total: 0,
+                visitors: { today: 0, total: 0 }
+            };
+
+            // 尝试 WP Statistics 插件
+            try {
+                const wpStatsUrl = this.useRestRoute
+                    ? `${this.siteUrl}${this.restRoutePrefix || ''}?rest_route=/wp-statistics/v2/hit`
+                    : `${this.siteUrl}/wp-json/wp-statistics/v2/hit`;
+                const wpStats = await this.request(wpStatsUrl);
+                if (wpStats) {
+                    result.available = true;
+                    result.plugin = 'WP Statistics';
+                    console.log('[WP Admin] WP Statistics 数据:', wpStats);
+                    return result;
+                }
+            } catch (e) {
+                console.log('[WP Admin] WP Statistics 不可用');
+            }
+
+            // 尝试 Jetpack Stats
+            try {
+                const jetpackUrl = this.useRestRoute
+                    ? `${this.siteUrl}${this.restRoutePrefix || ''}?rest_route=/jetpack/v4/module/stats`
+                    : `${this.siteUrl}/wp-json/jetpack/v4/module/stats`;
+                const jetpack = await this.request(jetpackUrl);
+                if (jetpack) {
+                    result.available = true;
+                    result.plugin = 'Jetpack Stats';
+                    console.log('[WP Admin] Jetpack Stats 数据:', jetpack);
+                    return result;
+                }
+            } catch (e) {
+                console.log('[WP Admin] Jetpack Stats 不可用');
+            }
+
+            // 尝试 Koko Analytics
+            try {
+                const kokoUrl = this.useRestRoute
+                    ? `${this.siteUrl}${this.restRoutePrefix || ''}?rest_route=/koko-analytics/v1/stats`
+                    : `${this.siteUrl}/wp-json/koko-analytics/v1/stats`;
+                const koko = await this.request(kokoUrl);
+                if (koko) {
+                    result.available = true;
+                    result.plugin = 'Koko Analytics';
+                    result.today = koko.pageviews?.today || 0;
+                    result.total = koko.pageviews?.total || 0;
+                    result.visitors.today = koko.visitors?.today || 0;
+                    result.visitors.total = koko.visitors?.total || 0;
+                    console.log('[WP Admin] Koko Analytics 数据:', koko);
+                    return result;
+                }
+            } catch (e) {
+                console.log('[WP Admin] Koko Analytics 不可用');
+            }
+
+            // 尝试自定义统计端点 (通用格式)
+            try {
+                const customUrl = this.useRestRoute
+                    ? `${this.siteUrl}${this.restRoutePrefix || ''}?rest_route=/wp-site-stats/v1/stats`
+                    : `${this.siteUrl}/wp-json/wp-site-stats/v1/stats`;
+                const custom = await this.request(customUrl);
+                if (custom) {
+                    result.available = true;
+                    result.plugin = 'Site Stats';
+                    result.today = custom.views?.today || custom.today || 0;
+                    result.week = custom.views?.week || custom.week || 0;
+                    result.month = custom.views?.month || custom.month || 0;
+                    result.total = custom.views?.total || custom.total || 0;
+                    return result;
+                }
+            } catch (e) {
+                console.log('[WP Admin] 自定义统计端点不可用');
+            }
+
+            // 尝试从文章中提取 Post Views Counter 数据
+            try {
+                const posts = await this.request(this.buildUrl('/wp/v2/posts?per_page=100&status=publish'));
+                let totalViews = 0;
+                let hasViewsData = false;
+
+                posts.forEach(post => {
+                    const views = post.post_views_count || post.views || post.meta?.post_views_count || 0;
+                    if (views > 0) {
+                        hasViewsData = true;
+                        totalViews += parseInt(views) || 0;
+                    }
+                });
+
+                if (hasViewsData) {
+                    result.available = true;
+                    result.plugin = 'Post Views Counter';
+                    result.total = totalViews;
+                    // 估算其他数据（无法精确获取）
+                    result.today = Math.round(totalViews / 100) || 0;
+                    result.week = Math.round(totalViews / 15) || 0;
+                    result.month = Math.round(totalViews / 4) || 0;
+                    return result;
+                }
+            } catch (e) {
+                console.log('[WP Admin] Post Views Counter 不可用');
+            }
+
+            return result;
         }
     }
 
@@ -1039,9 +1164,29 @@
 
         getStatsHTML() {
             return `
-                <div class="wp-info-box">
-                    统计数据基于WordPress文章和评论API获取，显示的是内容发布统计。
+                <div class="wp-info-box" id="wp-stats-info">
+                    正在检测统计插件...
                 </div>
+                <h4 style="margin-bottom: 12px; font-size: 14px;">访问统计</h4>
+                <div class="wp-stats-grid" id="wp-visitor-stats">
+                    <div class="wp-stat-card">
+                        <div class="wp-stat-value" id="stat-today-views">--</div>
+                        <div class="wp-stat-label">今日访问</div>
+                    </div>
+                    <div class="wp-stat-card">
+                        <div class="wp-stat-value" id="stat-week-views">--</div>
+                        <div class="wp-stat-label">本周访问</div>
+                    </div>
+                    <div class="wp-stat-card">
+                        <div class="wp-stat-value" id="stat-month-views">--</div>
+                        <div class="wp-stat-label">本月访问</div>
+                    </div>
+                    <div class="wp-stat-card">
+                        <div class="wp-stat-value" id="stat-total-views">--</div>
+                        <div class="wp-stat-label">总访问量</div>
+                    </div>
+                </div>
+                <h4 style="margin: 16px 0 12px; font-size: 14px;">内容统计</h4>
                 <div class="wp-stats-grid" id="wp-stats-overview">
                     <div class="wp-stat-card">
                         <div class="wp-stat-value" id="stat-total-posts">--</div>
@@ -1059,6 +1204,10 @@
                         <div class="wp-stat-value" id="stat-comments">--</div>
                         <div class="wp-stat-label">总评论数</div>
                     </div>
+                </div>
+                <div class="wp-chart-container">
+                    <div class="wp-chart-title">热门文章 (按访问量)</div>
+                    <div id="wp-popular-posts"><div class="wp-empty">暂无数据</div></div>
                 </div>
                 <div class="wp-chart-container">
                     <div class="wp-chart-title">最近文章</div>
@@ -1421,21 +1570,77 @@
                 return;
             }
 
-            try {
-                const stats = await this.api.getStats();
+            const infoBox = this.panel.querySelector('#wp-stats-info');
+            infoBox.innerHTML = '正在加载统计数据...';
 
+            try {
+                // 并行加载文章统计和访客统计
+                const [stats, visitorStats] = await Promise.all([
+                    this.api.getStats(),
+                    this.api.getVisitorStats()
+                ]);
+
+                // 更新文章统计
                 this.panel.querySelector('#stat-total-posts').textContent = stats.posts.total;
                 this.panel.querySelector('#stat-month-posts').textContent = stats.posts.month;
                 this.panel.querySelector('#stat-week-posts').textContent = stats.posts.week;
                 this.panel.querySelector('#stat-comments').textContent = stats.comments;
 
+                // 更新访客统计
+                if (visitorStats.available) {
+                    infoBox.innerHTML = `使用 <strong>${visitorStats.plugin}</strong> 插件获取访客数据`;
+                    infoBox.style.background = '#d4edda';
+                    infoBox.style.borderColor = '#c3e6cb';
+                    infoBox.style.color = '#155724';
+
+                    this.panel.querySelector('#stat-today-views').textContent = this.formatNumber(visitorStats.today);
+                    this.panel.querySelector('#stat-week-views').textContent = this.formatNumber(visitorStats.week);
+                    this.panel.querySelector('#stat-month-views').textContent = this.formatNumber(visitorStats.month);
+                    this.panel.querySelector('#stat-total-views').textContent = this.formatNumber(visitorStats.total);
+                } else {
+                    infoBox.innerHTML = `
+                        <strong>未检测到访客统计插件</strong><br>
+                        <small>建议安装以下插件之一来启用访客统计：<br>
+                        • WP Statistics（推荐）<br>
+                        • Jetpack Stats<br>
+                        • Koko Analytics<br>
+                        • Post Views Counter</small>
+                    `;
+                    infoBox.style.background = '#fff3cd';
+                    infoBox.style.borderColor = '#ffc107';
+                    infoBox.style.color = '#856404';
+
+                    this.panel.querySelector('#stat-today-views').textContent = '--';
+                    this.panel.querySelector('#stat-week-views').textContent = '--';
+                    this.panel.querySelector('#stat-month-views').textContent = '--';
+                    this.panel.querySelector('#stat-total-views').textContent = '--';
+                }
+
+                // 热门文章
+                const popularContainer = this.panel.querySelector('#wp-popular-posts');
+                if (stats.popularPosts && stats.popularPosts.length && stats.popularPosts.some(p => p.views > 0)) {
+                    const maxViews = Math.max(...stats.popularPosts.map(p => p.views || 0));
+                    popularContainer.innerHTML = stats.popularPosts.filter(p => p.views > 0).map(p => `
+                        <div class="wp-chart-bar">
+                            <div class="wp-chart-bar-label" title="${p.title}">${p.title.slice(0, 10)}${p.title.length > 10 ? '...' : ''}</div>
+                            <div class="wp-chart-bar-track">
+                                <div class="wp-chart-bar-fill" style="width: ${maxViews ? (p.views / maxViews * 100) : 0}%"></div>
+                            </div>
+                            <div class="wp-chart-bar-value">${this.formatNumber(p.views)}</div>
+                        </div>
+                    `).join('') || '<div class="wp-empty">暂无访问数据</div>';
+                } else {
+                    popularContainer.innerHTML = '<div class="wp-empty" style="padding:12px;font-size:12px;">暂无访问量数据（需安装统计插件）</div>';
+                }
+
+                // 最近文章
                 const recentContainer = this.panel.querySelector('#wp-recent-posts-stats');
                 if (stats.recentPosts && stats.recentPosts.length) {
                     recentContainer.innerHTML = stats.recentPosts.map(p => `
                         <div class="wp-list-item">
                             <div style="flex:1;overflow:hidden;">
                                 <div class="wp-list-item-title" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.title}</div>
-                                <div class="wp-list-item-meta">${new Date(p.date).toLocaleDateString()}</div>
+                                <div class="wp-list-item-meta">${new Date(p.date).toLocaleDateString()}${p.views > 0 ? ` · ${this.formatNumber(p.views)} 次浏览` : ''}</div>
                             </div>
                             <a href="${p.link}" target="_blank" class="wp-btn wp-btn-secondary" style="padding:4px 8px;font-size:12px;">查看</a>
                         </div>
@@ -1446,8 +1651,21 @@
 
             } catch (error) {
                 console.error('加载统计失败:', error);
+                infoBox.innerHTML = '加载统计数据失败';
+                infoBox.style.background = '#f8d7da';
+                infoBox.style.borderColor = '#f5c6cb';
+                infoBox.style.color = '#721c24';
                 this.showToast('加载统计失败: ' + error.message, 'error');
             }
+        }
+
+        formatNumber(num) {
+            if (num >= 10000) {
+                return (num / 10000).toFixed(1) + '万';
+            } else if (num >= 1000) {
+                return (num / 1000).toFixed(1) + 'k';
+            }
+            return num.toString();
         }
 
         async loadMoreData() {
