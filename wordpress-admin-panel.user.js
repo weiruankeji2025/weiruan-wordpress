@@ -721,29 +721,42 @@
             const endpoints = [
                 `${this.siteUrl}/wp-json/wp/v2/posts?per_page=1`,
                 `${this.siteUrl}/wp-json`,
+                `${this.siteUrl}/index.php?rest_route=/wp/v2/posts&per_page=1`,
                 `${this.siteUrl}/?rest_route=/wp/v2/posts&per_page=1`,
+                `${this.siteUrl}/index.php?rest_route=/`,
                 `${this.siteUrl}/?rest_route=/`
             ];
 
             for (const endpoint of endpoints) {
                 try {
+                    console.log('[WP Admin] 测试端点:', endpoint);
                     const result = await this.request(endpoint);
                     // 检测是否是WordPress REST API响应
                     if (result && (Array.isArray(result) || result.name || result.namespaces)) {
-                        // 如果使用rest_route参数成功，更新apiBase
-                        if (endpoint.includes('rest_route')) {
+                        // 检测使用的模式
+                        if (endpoint.includes('index.php?rest_route')) {
                             this.useRestRoute = true;
+                            this.restRoutePrefix = '/index.php';
+                            console.log('[WP Admin] 使用 index.php?rest_route 模式');
+                        } else if (endpoint.includes('?rest_route')) {
+                            this.useRestRoute = true;
+                            this.restRoutePrefix = '';
+                            console.log('[WP Admin] 使用 ?rest_route 模式');
+                        } else {
+                            this.useRestRoute = false;
+                            console.log('[WP Admin] 使用标准 /wp-json 模式');
                         }
                         return { success: true };
                     }
                 } catch (error) {
+                    console.log('[WP Admin] 端点失败:', endpoint, error.message);
                     continue;
                 }
             }
 
             return {
                 success: false,
-                error: 'REST API不可用。请检查：\n1. 站点地址是否正确\n2. WordPress版本是否≥4.7\n3. REST API是否被禁用'
+                error: 'REST API不可用。请检查：\n1. 站点地址是否正确\n2. WordPress版本是否≥4.7\n3. REST API是否被插件禁用\n4. 是否有插件干扰首页输出'
             };
         }
 
@@ -754,13 +767,14 @@
             let finalUrl;
 
             if (this.useRestRoute) {
+                const prefix = this.restRoutePrefix || '';
                 // 使用 ?rest_route= 格式
                 // 需要处理查询参数：/posts?per_page=10 -> rest_route=/wp/v2/posts&per_page=10
                 if (cleanEndpoint.includes('?')) {
                     const [path, query] = cleanEndpoint.split('?');
-                    finalUrl = `${this.siteUrl}/?rest_route=/wp/v2${path}&${query}`;
+                    finalUrl = `${this.siteUrl}${prefix}?rest_route=/wp/v2${path}&${query}`;
                 } else {
-                    finalUrl = `${this.siteUrl}/?rest_route=/wp/v2${cleanEndpoint}`;
+                    finalUrl = `${this.siteUrl}${prefix}?rest_route=/wp/v2${cleanEndpoint}`;
                 }
             } else {
                 finalUrl = `${this.apiBase}${cleanEndpoint}`;
