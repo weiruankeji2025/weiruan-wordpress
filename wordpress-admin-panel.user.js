@@ -669,14 +669,24 @@
                     headers['Authorization'] = `Basic ${auth}`;
                 }
 
+                console.log('[WP Admin] 请求:', method, url);
+
                 GM_xmlhttpRequest({
                     method: method,
                     url: url,
                     headers: headers,
                     data: options.body || null,
                     onload: (response) => {
+                        console.log('[WP Admin] 响应:', response.status, response.finalUrl || url);
                         try {
                             if (response.status >= 200 && response.status < 300) {
+                                // 检查是否是JSON
+                                const contentType = response.responseHeaders?.toLowerCase() || '';
+                                if (response.responseText.trim().startsWith('<')) {
+                                    console.error('[WP Admin] 返回了HTML而非JSON:', response.responseText.substring(0, 200));
+                                    reject(new Error('服务器返回HTML而非JSON，URL可能不正确: ' + url));
+                                    return;
+                                }
                                 const data = JSON.parse(response.responseText);
                                 resolve(data);
                             } else {
@@ -684,11 +694,16 @@
                                 try {
                                     const errData = JSON.parse(response.responseText);
                                     errorMsg = errData.message || errorMsg;
-                                } catch(e) {}
+                                } catch(e) {
+                                    // 如果不是JSON，可能是HTML错误页
+                                    if (response.responseText.includes('<')) {
+                                        errorMsg += ' (返回了HTML页面)';
+                                    }
+                                }
                                 reject(new Error(errorMsg));
                             }
                         } catch (e) {
-                            reject(new Error('解析响应失败: ' + e.message));
+                            reject(new Error('解析响应失败: ' + e.message + ' | URL: ' + url));
                         }
                     },
                     onerror: (error) => {
@@ -736,17 +751,23 @@
         buildUrl(endpoint) {
             // 移除开头的 /wp/v2 如果存在
             const cleanEndpoint = endpoint.replace(/^\/wp\/v2/, '');
+            let finalUrl;
 
             if (this.useRestRoute) {
                 // 使用 ?rest_route= 格式
                 // 需要处理查询参数：/posts?per_page=10 -> rest_route=/wp/v2/posts&per_page=10
                 if (cleanEndpoint.includes('?')) {
                     const [path, query] = cleanEndpoint.split('?');
-                    return `${this.siteUrl}/?rest_route=/wp/v2${path}&${query}`;
+                    finalUrl = `${this.siteUrl}/?rest_route=/wp/v2${path}&${query}`;
+                } else {
+                    finalUrl = `${this.siteUrl}/?rest_route=/wp/v2${cleanEndpoint}`;
                 }
-                return `${this.siteUrl}/?rest_route=/wp/v2${cleanEndpoint}`;
+            } else {
+                finalUrl = `${this.apiBase}${cleanEndpoint}`;
             }
-            return `${this.apiBase}${cleanEndpoint}`;
+
+            console.log('[WP Admin] buildUrl:', endpoint, '->', finalUrl, '| useRestRoute:', this.useRestRoute);
+            return finalUrl;
         }
 
         // 文章相关
